@@ -1,4 +1,4 @@
-name: 🚀 SEVER AI STV PREMIUM (FIX PORT 80)
+name: 🚀 SEVER AI STV PREMIUM (FIX CMD 3389)
 
 on:
   workflow_dispatch:
@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 360
     
     steps:
-      # 1. KHỞI ĐỘNG (Giữ style của bạn)
+      # 1. KHỞI ĐỘNG
       - name: 🎯 KHỞI ĐỘNG HỆ THỐNG
         run: |
           Write-Host "🤖 AI STV PREMIUM RDP SERVER" -ForegroundColor Yellow
           Write-Host "✅ Hệ thống đã sẵn sàng!" -ForegroundColor Green
 
-      # 2. TẠO USER ADMIN (Pass: window@123456)
+      # 2. TẠO USER (User: Admin | Pass: window@123456)
       - name: 👤 THIẾT LẬP USER ADMIN
         run: |
           net user Admin window@123456 /add /expires:never /passwordchg:no
@@ -35,33 +35,26 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
 
-      # 3. CHẠY KAMI TUNNEL (CMD THUẦN ĐỂ KHÔNG NHẢY PORT 80)
+      # 3. CHẠY ĐÚNG LỆNH BẠN ĐƯA (Fix Port 80)
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
-        shell: cmd
         run: |
-          echo 🌐 DANG TAI KAMI...
-          curl -L -o kami-tunnel-windows-amd64.tar.gz https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz
+          # Dùng Start-Process để lệnh của bạn chạy đúng tham số 3389 mà không bị dừng workflow
+          Start-Process powershell -ArgumentList "-NoProfile -Command `
+            iwr https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz -OutFile kami-tunnel-windows-amd64.tar.gz; `
+            tar -xzf kami-tunnel-windows-amd64.tar.gz; `
+            .\kami-tunnel.exe 3389"
           
-          echo 📦 GIAI NEN...
-          tar -xzf kami-tunnel-windows-amd64.tar.gz
-          
-          echo 🚀 CHAY LENH: kami-tunnel.exe 3389
-          :: Chạy start /b để nó không treo bước này mà vẫn ra file kami_tunnel.txt
-          start /b kami-tunnel.exe 3389
+          Write-Host "🚀 Đang khởi chạy Tunnel port 3389..." -ForegroundColor Cyan
 
       # 4. HIỂN THỊ THÔNG TIN (Đọc từ kami_tunnel.txt)
       - name: 🎉 THÔNG TIN KẾT NỐI
         run: |
-          Write-Host "🔄 Đang chờ Kami cập nhật file kami_tunnel.txt..." -ForegroundColor Cyan
-          $ip = "Đang lấy..."
-          # Đợi tối đa 20 giây để file txt được tạo
-          for($i=0; $i -lt 10; $i++) {
+          Write-Host "🔄 Đang lấy IP từ kami_tunnel.txt..." -ForegroundColor Cyan
+          $ip = "Chưa lấy được IP"
+          for($i=0; $i -lt 15; $i++) {
               if (Test-Path "kami_tunnel.txt") {
                   $content = Get-Content "kami_tunnel.txt"
-                  if ($content -match '\.') { 
-                      $ip = $content
-                      break 
-                  }
+                  if ($content -match '\.') { $ip = $content; break }
               }
               Start-Sleep -Seconds 2
           }
@@ -78,10 +71,9 @@ jobs:
       # 5. DUY TRÌ PHIÊN
       - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC
         run: |
-          $totalMin = if("${{ github.event.inputs.duration }}" -eq "1h") {60} elseif("${{ github.event.inputs.duration }}" -eq "3h") {180} else {340}
-          $endTime = (Get-Date).AddMinutes($totalMin)
+          $endTime = (Get-Date).AddMinutes(340)
           while ((Get-Date) -lt $endTime) {
               $left = $endTime - (Get-Date)
-              Write-Host "`r💎 IP: $ip | Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
-              Start-Sleep -Seconds 1
+              Write-Host "`r💎 Đang chạy... Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
+              Start-Sleep -Seconds 10
           }
