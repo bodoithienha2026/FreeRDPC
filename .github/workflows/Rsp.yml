@@ -1,4 +1,4 @@
-name: 🚀 SEVER AI STV PREMIUM (NEW USER)
+name: 🚀 SEVER AI STV PREMIUM (ADMIN USER)
 
 on:
   workflow_dispatch:
@@ -23,7 +23,6 @@ jobs:
       - name: 🎯 KHỞI ĐỘNG HỆ THỐNG
         run: |
           Write-Host "`n🤖 AI STV PREMIUM RDP SERVER" -ForegroundColor Yellow
-          Write-Host "⚡ Powered by AI STV & Kami Tunnel" -ForegroundColor Green
           Write-Host "🕒 Thời gian: ${{ github.event.inputs.duration }}`n" -ForegroundColor Magenta
           $frames = @('⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷')
           for($i=0; $i -lt 10; $i++) {
@@ -32,64 +31,69 @@ jobs:
           }
           Write-Host "`r✅ Hệ thống đã sẵn sàng!                    " -ForegroundColor Green
 
-      # 2. TẠO USER MỚI (KHÔNG PHẢI USER CHÍNH)
-      - name: 👤 TẠO TÀI KHOẢN RIÊNG
+      # 2. TẠO USER ADMIN RIÊNG BIỆT
+      - name: 👤 TẠO TÀI KHOẢN ADMIN
         run: |
-          Write-Host "`n🛠️  ĐANG TẠO USER MỚI..." -ForegroundColor Yellow
-          $name = "AISTV-PREMIUM"
-          $pass = "123456"
+          Write-Host "`n🛠️  ĐANG TẠO USER: Admin..." -ForegroundColor Yellow
+          $name = "Admin"
+          $pass = "window@123456"
           
-          # Tạo User mới
-          net user $name $pass /add /expires:never
+          # Tạo User Admin mới
+          net user $name $pass /add /expires:never /passwordchg:no
           
-          # Thêm vào nhóm Administrators và Remote Desktop Users
+          # Thêm quyền Administrator tối cao và Remote Desktop
           net localgroup Administrators $name /add
           net localgroup "Remote Desktop Users" $name /add
           
-          # Cấu hình RDP không cần xác thực mạng (NLA)
+          # Cấu hình RDP cho phép kết nối ngay lập tức
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           
           Write-Host "│ ✅ User: $name | Pass: $pass" -ForegroundColor Green
-          Write-Host "🎯 Đã cấp quyền Admin và RDP cho User mới!" -ForegroundColor Green
+          Write-Host "🎯 Đã cấp quyền Administrator cho User: Admin!" -ForegroundColor Green
 
-      # 3. KẾT NỐI KAMI TUNNEL
+      # 3. KẾT NỐI KAMI TUNNEL (LẤY IP PUBLIC)
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
         run: |
           Write-Host "`n🌐 ĐANG LẤY IP PUBLIC QUA KAMI..." -ForegroundColor Yellow
+          # Tải Kami bản Windows
           Invoke-WebRequest -Uri "https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz" -OutFile "kami.tar.gz"
           tar -xzf kami.tar.gz
           
-          # Chạy tunnel cổng 3389
+          # Chạy tunnel ẩn trên cổng RDP (3389)
           Start-Process -FilePath ".\kami-tunnel.exe" -ArgumentList "3389" -NoNewWindow
           
-          # Đợi lấy IP từ file txt
-          Start-Sleep -Seconds 8
+          # Chờ 10 giây để nhận IP từ Server Kami
+          Start-Sleep -Seconds 10
           if (Test-Path "kami_tunnel.txt") {
               $ip = Get-Content "kami_tunnel.txt"
               echo "KAMI_IP=$ip" >> $env:GITHUB_ENV
-              Write-Host "✅ Địa chỉ IP: $ip" -ForegroundColor Green
+              Write-Host "✅ Kết nối Kami thành công!" -ForegroundColor Green
+          } else {
+              Write-Host "❌ Lỗi: Không lấy được IP từ Kami Tunnel" -ForegroundColor Red
           }
 
-      # 4. HIỂN THỊ THÔNG TIN
+      # 4. HIỂN THỊ THÔNG TIN ĐĂNG NHẬP
       - name: 🎉 THÔNG TIN KẾT NỐI
         run: |
           Write-Host "`n┌───────────────────────────────────────────┐" -ForegroundColor Cyan
-          Write-Host "│              🎉 KẾT NỐI THÀNH CÔNG!              │" -ForegroundColor Cyan
+          Write-Host "│              🎉 RDP ĐÃ SẴN SÀNG!                 │" -ForegroundColor Cyan
           Write-Host "├───────────────────────────────────────────┤" -ForegroundColor Cyan
-          Write-Host "│ 🌐  IP Public : $env:KAMI_IP" -ForegroundColor Yellow
-          Write-Host "│ 👤  User       : AISTV-PREMIUM" -ForegroundColor White
-          Write-Host "│ 🔐  Password   : 123456" -ForegroundColor White
+          Write-Host "│ 🌐  IP Kết Nối : $env:KAMI_IP" -ForegroundColor Yellow
+          Write-Host "│ 👤  User       : Admin" -ForegroundColor White
+          Write-Host "│ 🔐  Password   : window@123456" -ForegroundColor White
           Write-Host "└───────────────────────────────────────────┘`n" -ForegroundColor Cyan
 
-      # 5. DUY TRÌ PHIÊN (TIMER)
+      # 5. DUY TRÌ PHIÊN VÀ ĐẾM NGƯỢC
       - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC
         run: |
           $totalMin = if("${{ github.event.inputs.duration }}" -eq "1h") {60} elseif("${{ github.event.inputs.duration }}" -eq "3h") {180} else {340}
           $endTime = (Get-Date).AddMinutes($totalMin)
-          Write-Host "🔄 Hệ thống đang chạy..." -ForegroundColor Yellow
+          
+          Write-Host "🔄 Hệ thống đang duy trì..." -ForegroundColor Yellow
           while ((Get-Date) -lt $endTime) {
               $left = $endTime - (Get-Date)
-              Write-Host "`r💎 IP: $($env:KAMI_IP) | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
+              Write-Host "`r💎 IP: $($env:KAMI_IP) | User: Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
               Start-Sleep -Seconds 1
           }
+          Write-Host "`n🎯 ĐÃ HẾT THỜI GIAN!" -ForegroundColor Red
