@@ -1,0 +1,92 @@
+name: 🚀 SEVER WINDOWS PRO (KAMI TUNNEL)
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: '🕒 Thời gian treo máy (Max 6h)'
+        required: true
+        default: '6h'
+        type: choice
+        options: ['6h']
+
+jobs:
+  Windows-Server-RDP:
+    runs-on: windows-latest
+    
+    steps:
+      # 1. CẤU HÌNH USER VÀ RDP
+      - name: 🛠️ Cài đặt Hệ thống & User
+        run: |
+          Write-Host "--------------------------------------------"
+          Write-Host "👤 ĐANG CẤU HÌNH TÀI KHOẢN ADMIN..." -ForegroundColor Yellow
+          
+          # Đặt mật khẩu cho User Admin mặc định (runneradmin)
+          net user runneradmin 123456
+          
+          # Bật RDP, Tắt xác thực NLA (để dễ kết nối), Mở Firewall
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 1
+          netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+          
+          Write-Host "✅ User: runneradmin | Pass: 123456" -ForegroundColor Green
+          Write-Host "✅ Đã mở cấu hình RDP thành công!" -ForegroundColor Green
+          Write-Host "--------------------------------------------"
+
+      # 2. TẢI VÀ CHẠY KAMI TUNNEL (WINDOWS)
+      - name: 🌐 Khởi chạy Kami Tunnel
+        run: |
+          Write-Host "📥 Đang tải Kami Tunnel (Windows)..." -ForegroundColor Cyan
+          
+          # Tải file
+          Invoke-WebRequest -Uri "https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz" -OutFile "kami.tar.gz"
+          
+          # Giải nén
+          tar -xzf kami.tar.gz
+          
+          # Chạy Tunnel ẩn (Start-Process để không bị treo script)
+          Write-Host "🚀 Đang kích hoạt Tunnel..." -ForegroundColor Yellow
+          Start-Process -FilePath ".\kami-tunnel.exe" -ArgumentList "3389" -NoNewWindow
+          
+          # Đợi 5 giây để file txt kịp tạo ra
+          Start-Sleep -Seconds 5
+          
+          # Kiểm tra file và đọc IP
+          if (Test-Path "kami_tunnel.txt") {
+              $ip = Get-Content "kami_tunnel.txt"
+              echo "RDP_IP=$ip" >> $env:GITHUB_ENV
+              Write-Host "✅ Đã lấy được IP thành công!" -ForegroundColor Green
+          } else {
+              Write-Host "❌ Không tìm thấy file IP. Vui lòng kiểm tra lại Tunnel." -ForegroundColor Red
+          }
+
+      # 3. HIỂN THỊ THÔNG TIN VÀ TREO MÁY
+      - name: 🎉 THÔNG TIN KẾT NỐI
+        run: |
+          $ip = $env:RDP_IP
+          
+          Write-Host ""
+          Write-Host "┌───────────────────────────────────────────┐" -ForegroundColor Cyan
+          Write-Host "│           🚀 WINDOWS SERVER READY           │" -ForegroundColor Cyan
+          Write-Host "├───────────────────────────────────────────┤" -ForegroundColor Cyan
+          Write-Host "│ 🖥️  IP Kết Nối : $ip" -ForegroundColor Green
+          Write-Host "│ 👤  User       : runneradmin" -ForegroundColor White
+          Write-Host "│ 🔐  Password   : 123456" -ForegroundColor White
+          Write-Host "│ 🕒  Thời gian  : 6 Giờ" -ForegroundColor White
+          Write-Host "├───────────────────────────────────────────┤" -ForegroundColor Cyan
+          Write-Host "│ ⚠️  Lưu ý: Copy IP trên dán vào RDP        │" -ForegroundColor Yellow
+          Write-Host "└───────────────────────────────────────────┘" -ForegroundColor Cyan
+          Write-Host ""
+
+          # Vòng lặp giữ kết nối đẹp (Treo máy 6 tiếng)
+          # Log sẽ hiện mỗi 2 phút một lần để không bị spam
+          $seconds = 21600
+          while ($seconds -gt 0) {
+              if ($seconds % 120 -eq 0) {
+                  $timestamp = Get-Date -Format "HH:mm:ss"
+                  Write-Host "💎 [$timestamp] Hệ thống đang hoạt động ổn định... IP: $ip" -ForegroundColor Magenta
+              }
+              Start-Sleep -Seconds 1
+              $seconds--
+          }
