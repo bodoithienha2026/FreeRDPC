@@ -1,4 +1,4 @@
-name: 🚀 Ubuntu 
+name: 🚀 Ubuntu Pro (Zun x Kami Tunnel)
 
 on:
   workflow_dispatch:
@@ -17,26 +17,33 @@ jobs:
   Ubuntu-Setup:
     runs-on: ubuntu-latest
     steps:
-      - name: 🛠️ ĐANG KHỞI TẠO UBUNTU SERVER 2025
+      - name: 🛠️ ĐANG KHỞI TẠO UBUNTU SERVER
         run: |
-          # Ẩn toàn bộ log cài đặt rườm rà
+          # 1. Xử lý khóa apt-get và cập nhật (Ẩn log)
+          sudo rm -rf /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock > /dev/null 2>&1
           sudo apt-get update > /dev/null 2>&1
-          sudo apt-get install -y xfce4 xfce4-goodies xrdp > /dev/null 2>&1
           
-          # Cấu hình User: ubuntu | Pass: Ubuntu@123456
-          sudo useradd -m ubuntu
+          # 2. Cài đặt giao diện nhẹ XFCE và XRDP
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xfce4 xfce4-goodies xrdp > /dev/null 2>&1
+          
+          # 3. Cấu hình User: ubuntu | Pass: Ubuntu@123456
+          # Xóa user nếu đã tồn tại để tránh lỗi exit code 1
+          sudo userdel -r ubuntu > /dev/null 2>&1
+          sudo useradd -m -s /bin/bash ubuntu
           echo "ubuntu:Ubuntu@123456" | sudo chpasswd
           sudo usermod -aG sudo ubuntu
           
-          # Cấu hình môi trường Desktop cho RDP
+          # 4. Cấu hình môi trường Desktop cho RDP (Cực kỳ quan trọng để không màn hình đen)
           echo "xfce4-session" > /home/ubuntu/.xsession
           sudo chown ubuntu:ubuntu /home/ubuntu/.xsession
-          sudo systemctl enable xrdp > /dev/null 2>&1
-          sudo systemctl start xrdp > /dev/null 2>&1
           
-          # Tải và chạy Kami Tunnel (Đúng lệnh của bạn)
+          # Fix lỗi quyền cho XRDP
+          sudo adduser xrdp ssl-cert > /dev/null 2>&1
+          sudo systemctl restart xrdp > /dev/null 2>&1
+          
+          # 5. Tải và chạy Kami Tunnel (Đúng lệnh của bạn)
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
-          tar -xzf kami-tunnel-linux-amd64.tar.gz
+          tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
           ./kami-tunnel 3389 > /dev/null 2>&1 &
 
@@ -49,7 +56,7 @@ jobs:
           RDP_IP=""
           while [ -z "$RDP_IP" ]; do
             RDP_IP=$(cat kami_tunnel.txt)
-            sleep 2
+            [ -z "$RDP_IP" ] && sleep 2
           done
           
           echo ""
@@ -62,7 +69,7 @@ jobs:
           echo "│ 🔐 Mật khẩu    : Ubuntu@123456"
           echo "│ 📍 Cổng RDP    : 3389"
           echo "├────────────────────────────────────────────────────┤"
-          echo "│ ⚡ Cấu hình    : 4 Cores CPU | 16 GB RAM            │"
+          echo "│ ⚡ Cấu hình    : 4 Cores CPU | 8 GB RAM            │"
           echo "└────────────────────────────────────────────────────┘"
           echo ""
           echo "IP_ADDR=$RDP_IP" >> $GITHUB_ENV
