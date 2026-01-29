@@ -1,4 +1,4 @@
-name: 🚀 SEVER AI STV PREMIUM (ADMIN KAMI)
+name: 🚀 SEVER AI STV PREMIUM (KAMI NATIVE)
 
 on:
   workflow_dispatch:
@@ -24,49 +24,44 @@ jobs:
         run: |
           Write-Host "`n🤖 AI STV PREMIUM RDP SERVER" -ForegroundColor Yellow
           Write-Host "🕒 Thời gian: ${{ github.event.inputs.duration }}`n" -ForegroundColor Magenta
-          Write-Host "🚀 Đang khởi tạo hệ thống..." -ForegroundColor Blue
           Write-Host "✅ Hệ thống đã sẵn sàng!" -ForegroundColor Green
 
-      # 2. TẠO USER ADMIN & MỞ CỔNG RDP (Mật khẩu: window@123456)
-      - name: 👤 THIẾT LẬP USER ADMIN & RDP
+      # 2. CẤU HÌNH USER ADMIN & RDP (window@123456)
+      - name: 👤 THIẾT LẬP TÀI KHOẢN ADMIN
         run: |
           Write-Host "`n🛠️  ĐANG TẠO USER: Admin..." -ForegroundColor Yellow
-          
-          # Tạo User Admin và cấp quyền (Pass: window@123456)
+          # Tạo User Admin / Pass: window@123456
           net user Admin window@123456 /add /expires:never /passwordchg:no
           net localgroup Administrators Admin /add
           net localgroup "Remote Desktop Users" Admin /add
           
-          # Mở cổng RDP trong Registry và Firewall
+          # Mở cổng RDP và tắt xác thực mạng (NLA) để dễ kết nối
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
           
-          Write-Host "│ ✅ Đã tạo User Admin thành công!" -ForegroundColor Green
-          Write-Host "│ ✅ Đã mở cổng RDP (3389)!" -ForegroundColor Green
+          Write-Host "│ ✅ User: Admin | Pass: window@123456" -ForegroundColor Green
 
-      # 3. KÍCH HOẠT KAMI TUNNEL (Sử dụng đúng lệnh bạn yêu cầu)
+      # 3. KÍCH HOẠT KAMI TUNNEL (ĐÚNG LỆNH BẠN YÊU CẦU)
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
         shell: cmd
         run: |
           echo.
-          echo 🌐 ĐANG THIẾT LẬP KAMI TUNNEL...
-          
-          :: Tải Kami Tunnel
+          echo 🌐 ĐANG TẢI KAMI...
           curl -L -o kami-tunnel-windows-amd64.tar.gz https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz
           
-          :: Giải nén đúng lệnh bạn yêu cầu
+          echo 📦 GIẢI NÉN...
           tar -xzf kami-tunnel-windows-amd64.tar.gz
           
-          :: Chạy đúng lệnh bạn yêu cầu (cổng 3389)
-          start /b kami-tunnel.exe 3389
+          echo 🚀 CHẠY TUNNEL...
+          :: Sử dụng start để chạy lệnh của bạn mà không làm treo script
+          start kami-tunnel.exe 3389
 
-      # 4. LẤY IP VÀ HIỂN THỊ THÔNG TIN
+      # 4. HIỂN THỊ THÔNG TIN KẾT NỐI
       - name: 🎉 THÔNG TIN KẾT NỐI
         run: |
-          Write-Host "`n🔄 Đang lấy IP Public từ Kami..." -ForegroundColor Cyan
+          Write-Host "`n🔄 Đang lấy địa chỉ IP Public..." -ForegroundColor Cyan
           $ip = ""
-          # Vòng lặp chờ IP hiện ra full
           for($i=0; $i -lt 15; $i++) {
               if (Test-Path "kami_tunnel.txt") {
                   $ip = Get-Content "kami_tunnel.txt"
@@ -93,6 +88,6 @@ jobs:
           $endTime = (Get-Date).AddMinutes($totalMin)
           while ((Get-Date) -lt $endTime) {
               $left = $endTime - (Get-Date)
-              Write-Host "`r💎 IP: $env:KAMI_IP | User: Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
+              Write-Host "`r💎 IP: $env:KAMI_IP | Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
               Start-Sleep -Seconds 1
           }
