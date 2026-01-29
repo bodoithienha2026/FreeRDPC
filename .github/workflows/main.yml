@@ -1,4 +1,5 @@
-name: 🚀 Windows Pro (Kami Tunnel)
+name: 🚀 Windows 
+
 on: 
   workflow_dispatch:
     inputs:
@@ -13,11 +14,10 @@ jobs:
   run-windows:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 🏗️ Setup Windows Docker
+      - name: 🛠️ ĐANG KHỞI TẠO WINDOWS SERVER 2025
         run: |
+          # Chạy ẩn toàn bộ quá trình cài đặt
+          sudo apt-get update > /dev/null 2>&1
           cat <<EOF > docker-compose.yml
           version: "3.9"
           services:
@@ -27,50 +27,55 @@ jobs:
               privileged: true
               environment:
                 VERSION: "${{ github.event.inputs.win_version }}"
-                USERNAME: "Zun"
-                PASSWORD: "123456"
-                RAM_SIZE: "6G"
-                CPU_CORES: "2"
+                USERNAME: "windows"
+                PASSWORD: "window@123456"
+                RAM_SIZE: "8G"
+                CPU_CORES: "4"
                 DISK_SIZE: "60G"
-                KVM: "Y"
-              devices: [ "/dev/kvm:/dev/kvm" ]
-              cap_add: [ "NET_ADMIN", "SYS_ADMIN" ]
+              devices: [ "/dev/kvm" ]
               ports:
-                - "8006:8006"
                 - "3389:3389"
-              restart: always
           EOF
-          docker compose up -d
-
-      - name: 🌐 Khởi tạo Kami Tunnel (RDP & Web)
-        run: |
-          # Tải và giải nén Kami Tunnel
-          wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
-          tar -xzf kami-tunnel-linux-amd64.tar.gz
-          chmod +x kami-tunnel
-
-          # Chạy Tunnel cho RDP (3389)
-          ./kami-tunnel 3389 > /dev/null 2>&1 &
-          sleep 5
-          RDP_IP=$(cat kami_tunnel.txt)
-
-          # Chạy Tunnel cho Web (8006)
-          ./kami-tunnel 8006 > /dev/null 2>&1 &
-          sleep 5
-          WEB_IP=$(cat kami_tunnel.txt)
-
-          echo "===================================================="
-          echo "🚀 WINDOWS ${{ github.event.inputs.win_version }} ĐANG KHỞI CHẠY!"
-          echo "===================================================="
-          echo "🖥️  KẾT NỐI RDP: $RDP_IP"
-          echo "🌐 KẾT NỐI WEB: http://$WEB_IP"
-          echo "----------------------------------------------------"
-          echo "🔑 Username: Zun | Password: 123456"
-          echo "⏳ Lưu ý: Windows cần 5-10 phút để tải và cài đặt."
-          echo "===================================================="
+          docker compose up -d > /dev/null 2>&1
           
-          # Giữ workflow chạy và update log sạch sẽ
+          # Tải Kami Tunnel ẩn danh
+          wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
+          tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
+          chmod +x kami-tunnel
+          
+          # Chạy đúng lệnh của bạn
+          ./kami-tunnel 3389 > /dev/null 2>&1 &
+
+      - name: 🎉 THÔNG TIN KẾT NỐI WINDOWS
+        run: |
+          echo "🔄 Đang kiểm tra tín hiệu từ Windows Server 2025..."
+          
+          # Vòng lặp chờ cho đến khi có file IP
+          while [ ! -f kami_tunnel.txt ]; do sleep 2; done
+          
+          # Đợi file có nội dung IP
+          RDP_IP=""
+          while [ -z "$RDP_IP" ]; do
+            RDP_IP=$(cat kami_tunnel.txt)
+            sleep 2
+          done
+
+          echo ""
+          echo "┌────────────────────────────────────────────────────┐"
+          echo "│          🎉 WINDOWS SERVER 2025 READY!             │"
+          echo "├────────────────────────────────────────────────────┤"
+          echo "│ 🌐 Địa chỉ IP : $RDP_IP"
+          echo "│ 👤 Tài khoản  : windows"
+          echo "│ 🔐 Mật khẩu   : window@123456"
+          echo "│ 📍 Cổng RDP   : 3389"
+          echo "└────────────────────────────────────────────────────┘"
+          echo ""
+          echo "KAMI_IP=$RDP_IP" >> $GITHUB_ENV
+
+      - name: ⏳ DUY TRÌ PHIÊN WINDOWS
+        run: |
+          # Giữ workflow chạy và update log ngắn gọn
           for i in {1..72}; do
-            echo "💎 [$(date +%H:%M:%S)] Trạng thái: Đang hoạt động. RDP: $RDP_IP"
+            echo "💎 [$(date +%H:%M:%S)] Windows Server 2025 đang chạy. IP: $KAMI_IP"
             sleep 300
           done
