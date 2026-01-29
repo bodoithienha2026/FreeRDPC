@@ -30,32 +30,28 @@ jobs:
       - name: 👤 THIẾT LẬP TÀI KHOẢN ADMIN
         run: |
           Write-Host "`n🛠️  ĐANG TẠO USER: Admin..." -ForegroundColor Yellow
-          # Tạo User Admin / Pass: window@123456
           net user Admin window@123456 /add /expires:never /passwordchg:no
           net localgroup Administrators Admin /add
           net localgroup "Remote Desktop Users" Admin /add
           
-          # Mở cổng RDP và tắt xác thực mạng (NLA) để dễ kết nối
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
           
           Write-Host "│ ✅ User: Admin | Pass: window@123456" -ForegroundColor Green
 
-      # 3. KÍCH HOẠT KAMI TUNNEL (ĐÚNG LỆNH BẠN YÊU CẦU)
+      # 3. KÍCH HOẠT KAMI TUNNEL
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
-        shell: cmd
+        shell: powershell
         run: |
-          echo.
-          echo 🌐 ĐANG TẢI KAMI...
-          curl -L -o kami-tunnel-windows-amd64.tar.gz https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz
+          Write-Host "`n🌐 ĐANG TẢI KAMI..." -ForegroundColor Cyan
+          Invoke-WebRequest -Uri "https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz" -OutFile "kami-tunnel.tar.gz"
           
-          echo 📦 GIẢI NÉN...
-          tar -xzf kami-tunnel-windows-amd64.tar.gz
+          Write-Host "📦 GIẢI NÉN..." -ForegroundColor Yellow
+          tar -xzf kami-tunnel.tar.gz
           
-          echo 🚀 CHẠY TUNNEL...
-          :: Sử dụng start để chạy lệnh của bạn mà không làm treo script
-          start kami-tunnel.exe 3389
+          Write-Host "🚀 CHẠY TUNNEL PORT 3389..." -ForegroundColor Green
+          Start-Process -FilePath ".\kami-tunnel.exe" -ArgumentList "3389" -NoNewWindow
 
       # 4. HIỂN THỊ THÔNG TIN KẾT NỐI
       - name: 🎉 THÔNG TIN KẾT NỐI
@@ -81,7 +77,7 @@ jobs:
           Write-Host "│ 🔐  Password   : window@123456" -ForegroundColor White
           Write-Host "└───────────────────────────────────────────┘`n" -ForegroundColor Cyan
 
-      # 5. DUY TRÌ PHIÊN (TIMER)
+      # 5. DUY TRÌ PHIÊN
       - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC
         run: |
           $totalMin = if("${{ github.event.inputs.duration }}" -eq "1h") {60} elseif("${{ github.event.inputs.duration }}" -eq "3h") {180} else {340}
@@ -91,3 +87,4 @@ jobs:
               Write-Host "`r💎 IP: $env:KAMI_IP | Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
               Start-Sleep -Seconds 1
           }
+```
