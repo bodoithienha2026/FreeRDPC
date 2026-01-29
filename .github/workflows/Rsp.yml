@@ -1,4 +1,4 @@
-name: 🚀 SEVER AI STV PREMIUM (FULL INFO LOG)
+name: 🚀 SEVER AI STV PREMIUM (FIX KAMI TXT)
 
 on:
   workflow_dispatch:
@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 360
     
     steps:
-      # 1. KHỞI ĐỘNG (Giữ style của bạn)
+      # 1. KHỞI ĐỘNG HỆ THỐNG
       - name: 🎯 KHỞI ĐỘNG HỆ THỐNG
         run: |
           Write-Host "🤖 AI STV PREMIUM RDP SERVER" -ForegroundColor Yellow
           Write-Host "✅ Hệ thống đã sẵn sàng!" -ForegroundColor Green
 
-      # 2. TẠO USER ADMIN (window@123456)
+      # 2. TẠO USER ADMIN (Pass: window@123456)
       - name: 👤 THIẾT LẬP USER ADMIN
         run: |
           net user Admin window@123456 /add /expires:never /passwordchg:no
@@ -35,22 +35,28 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
 
-      # 3. CHẠY LỆNH KAMI (CMD NATIVE)
+      # 3. KÍCH HOẠT KAMI TUNNEL (ĐÚNG LỆNH CỦA BẠN)
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
         shell: cmd
         run: |
           curl -L -o kami-tunnel-windows-amd64.tar.gz https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz
           tar -xzf kami-tunnel-windows-amd64.tar.gz
-          :: Chạy lệnh của bạn và đẩy log ra file để lấy IP
-          start /b kami-tunnel.exe 3389 > kami_log.txt 2>&1
+          :: Chạy ngầm để không treo log, dữ liệu IP sẽ tự xuất ra kami_tunnel.txt
+          start /b kami-tunnel.exe 3389
 
-      # 4. MỤC HIỆN THÔNG TIN ĐỂ BẠN COI (Dựa theo mẫu bạn đưa)
+      # 4. HIỂN THỊ THÔNG TIN (Đọc từ kami_tunnel.txt)
       - name: 🎉 THÔNG TIN KẾT NỐI
         run: |
-          Write-Host "🔄 Đang chờ lấy IP Public từ Kami..." -ForegroundColor Cyan
-          Start-Sleep -Seconds 15
-          $log = Get-Content "kami_log.txt" -ErrorAction SilentlyContinue
-          $ip = ($log | Select-String -Pattern "Public: ([^\s]+)" | ForEach-Object { $_.Matches.Groups[1].Value })
+          Write-Host "🔄 Đang chờ Kami xuất IP ra file kami_tunnel.txt..." -ForegroundColor Cyan
+          $ip = ""
+          # Đợi tối đa 30 giây để file txt có dữ liệu
+          for($i=0; $i -lt 15; $i++) {
+              if (Test-Path "kami_tunnel.txt") {
+                  $ip = Get-Content "kami_tunnel.txt"
+                  if ($ip -and $ip -match '\.') { break }
+              }
+              Start-Sleep -Seconds 2
+          }
           
           Write-Host "`n┌───────────────────────────────────────────┐" -ForegroundColor Cyan
           Write-Host "│              🎉 RDP ĐÃ SẴN SÀNG!                 │" -ForegroundColor Cyan
@@ -60,16 +66,13 @@ jobs:
           Write-Host "│ 🔐  Mật khẩu   : window@123456" -ForegroundColor White
           Write-Host "│ 📍  Port       : 3389" -ForegroundColor White
           Write-Host "└───────────────────────────────────────────┘`n" -ForegroundColor Cyan
-          
-          # Hiện thêm log chi tiết bên dưới cho bạn xem
-          Write-Host "--- CHI TIẾT LOG KAMI ---" -ForegroundColor Gray
-          Get-Content "kami_log.txt" -Tail 10
 
-      # 5. DUY TRÌ PHIÊN
+      # 5. DUY TRÌ PHIÊN (Giữ server sống)
       - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC
         run: |
           $endTime = (Get-Date).AddMinutes(340)
           while ((Get-Date) -lt $endTime) {
-              Write-Host "`r💎 Hệ thống đang chạy... Còn lại: $(($endTime - (Get-Date)).ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
+              $left = $endTime - (Get-Date)
+              Write-Host "`r💎 Hệ thống đang chạy... Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
               Start-Sleep -Seconds 10
           }
