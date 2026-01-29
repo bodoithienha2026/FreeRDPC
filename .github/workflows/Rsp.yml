@@ -1,4 +1,4 @@
-name: 🚀 SEVER AI STV PREMIUM (FIX PORT 80)
+name: 🚀 SEVER AI STV PREMIUM (CMD NATIVE)
 
 on:
   workflow_dispatch:
@@ -19,66 +19,26 @@ jobs:
     timeout-minutes: 360
     
     steps:
-      # 1. TẠO USER ADMIN (Đúng mật khẩu bạn yêu cầu)
-      - name: 👤 THIẾT LẬP TÀI KHOẢN ADMIN
+      # 1. TẠO USER ADMIN (window@123456)
+      - name: 👤 THIẾT LẬP USER ADMIN
         run: |
-          Write-Host "🛠️  ĐANG TẠO USER: Admin..." -ForegroundColor Yellow
+          # Dùng mật khẩu mạnh để không lỗi Policy
           net user Admin window@123456 /add /expires:never /passwordchg:no
           net localgroup Administrators Admin /add
           net localgroup "Remote Desktop Users" Admin /add
           
-          # Mở cổng RDP trên hệ thống
+          # Mở cổng RDP hệ thống
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
-          Write-Host "✅ Đã tạo User Admin thành công!" -ForegroundColor Green
 
-      # 2. CHẠY KAMI TUNNEL (Dùng CMD để không bị lỗi port 80)
+      # 2. CHẠY KAMI TUNNEL (DÙNG ĐÚNG LỆNH BẠN GỬI)
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
         shell: cmd
         run: |
           echo 🌐 ĐANG TẢI KAMI...
           curl -L -o kami-tunnel-windows-amd64.tar.gz https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz
           
-          echo 📦 GIẢI NÉN...
+          echo 🚀 ĐANG CHẠY LỆNH CỦA BẠN...
           tar -xzf kami-tunnel-windows-amd64.tar.gz
-          
-          echo 🚀 CHẠY LỆNH: kami-tunnel.exe 3389
-          :: Sử dụng 'start' để chạy lệnh của bạn mà không làm đứng script, giúp hiện IP bên dưới
-          start kami-tunnel.exe 3389
-
-      # 3. HIỂN THỊ THÔNG TIN KẾT NỐI
-      - name: 🎉 THÔNG TIN KẾT NỐI
-        run: |
-          Write-Host "`n🔄 Đang lấy IP từ Kami Tunnel..." -ForegroundColor Cyan
-          $ip = ""
-          # Vòng lặp chờ file IP (15 lần, mỗi lần 2 giây)
-          for($i=0; $i -lt 15; $i++) {
-              if (Test-Path "kami_tunnel.txt") {
-                  $ip = Get-Content "kami_tunnel.txt"
-                  if ($ip -and $ip -match '\.') {
-                      echo "KAMI_IP=$ip" >> $env:GITHUB_ENV
-                      break
-                  }
-              }
-              Start-Sleep -Seconds 2
-          }
-          
-          Write-Host "`n┌───────────────────────────────────────────┐" -ForegroundColor Cyan
-          Write-Host "│              🎉 RDP ĐÃ SẴN SÀNG!                 │" -ForegroundColor Cyan
-          Write-Host "├───────────────────────────────────────────┤" -ForegroundColor Cyan
-          Write-Host "│ 🌐  IP Kết Nối : $ip" -ForegroundColor Yellow
-          Write-Host "│ 👤  User       : Admin" -ForegroundColor White
-          Write-Host "│ 🔐  Password   : window@123456" -ForegroundColor White
-          Write-Host "└───────────────────────────────────────────┘`n" -ForegroundColor Cyan
-
-      # 4. DUY TRÌ PHIÊN (Đếm ngược thời gian)
-      - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC
-        run: |
-          $totalMin = if("${{ github.event.inputs.duration }}" -eq "1h") {60} elseif("${{ github.event.inputs.duration }}" -eq "3h") {180} else {340}
-          $endTime = (Get-Date).AddMinutes($totalMin)
-          while ((Get-Date) -lt $endTime) {
-              $left = $endTime - (Get-Date)
-              Write-Host "`r💎 IP: $env:KAMI_IP | Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
-              Start-Sleep -Seconds 1
-          }
+          kami-tunnel.exe 3389
