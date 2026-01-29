@@ -1,0 +1,171 @@
+name: 🚀 WINDOWS SERVER
+
+on: 
+  workflow_dispatch:
+    inputs:
+      win_version:
+        description: '📀 Chọn phiên bản Windows'
+        required: true
+        default: '2025-docker'
+        type: choice
+        options: 
+          - "2025-native"
+          - "2025-docker"
+          - "2022"
+          - "2019"
+          - "2012"
+          - "11"
+          - "10"
+
+jobs:
+  # Job 1: Windows Server 2025 Native (4vCPU | 16GB RAM)
+  windows-native:
+    if: github.event.inputs.win_version == '2025-native'
+    runs-on: windows-latest
+    timeout-minutes: 360
+    
+    steps:
+      - name: 🛠️ ĐANG KHỞI TẠO WINDOWS SERVER 2025 (4vCPU | 16GB RAM)
+        run: |
+          $ErrorActionPreference = 'SilentlyContinue'
+          # 1. Tạo User Windows (Pass: window@123456)
+          net user windows window@123456 /add /expires:never /passwordchg:no
+          net localgroup Administrators windows /add
+          net localgroup "Remote Desktop Users" windows /add
+          
+          # 2. Cấu hình RDP hệ thống
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
+          netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
+          
+          # 3. Chạy Kami Tunnel
+          Start-Process powershell -ArgumentList "-NoProfile -Command `
+            iwr https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz -OutFile kami-tunnel-windows-amd64.tar.gz; `
+            tar -xzf kami-tunnel-windows-amd64.tar.gz; `
+            .\kami-tunnel.exe 3389"
+
+      - name: 🎉 THÔNG TIN KẾT NỐI WINDOWS SERVER 2025 (Native)
+        if: github.event.inputs.win_version == '2025-native'
+        run: |
+          Write-Host "🔄 Đang kiểm tra hệ thống Windows Server 2025 (4vCPU | 16GB RAM)..." -ForegroundColor Cyan
+          $ip = ""
+          # Vòng lặp chờ cho đến khi kami_tunnel.txt có dữ liệu
+          while (-not $ip) {
+              if (Test-Path "kami_tunnel.txt") {
+                  $content = Get-Content "kami_tunnel.txt"
+                  if ($content -match '\.') { 
+                      $ip = $content 
+                  }
+              }
+              if (-not $ip) { Start-Sleep -Seconds 3 }
+          }
+          
+          # Chỉ hiện bảng này khi đã có IP đầy đủ
+          Write-Host "`n┌─────────────────────────────────────────────────────┐" -ForegroundColor Green
+          Write-Host "│    🎉 WINDOWS SERVER 2025 READY! (4vCPU | 16GB RAM) │" -ForegroundColor Green
+          Write-Host "├─────────────────────────────────────────────────────┤" -ForegroundColor White
+          Write-Host "│ 🌐  Địa chỉ IP : $ip" -ForegroundColor Yellow
+          Write-Host "│ 👤  Tài khoản  : windows" -ForegroundColor White
+          Write-Host "│ 🔐  Mật khẩu   : window@123456" -ForegroundColor White
+          Write-Host "│ 📍  Port       : 3389" -ForegroundColor White
+          Write-Host "│ 💻  Cấu hình   : 4 vCPU | 16GB RAM" -ForegroundColor Cyan
+          Write-Host "└─────────────────────────────────────────────────────┘`n" -ForegroundColor Green
+
+      - name: ⏳ DUY TRÌ PHIÊN WINDOWS (Native)
+        if: github.event.inputs.win_version == '2025-native'
+        run: |
+          $endTime = (Get-Date).AddMinutes(340)
+          while ((Get-Date) -lt $endTime) {
+              $left = $endTime - (Get-Date)
+              Write-Host "`r💎 Windows Server 2025 (4vCPU | 16GB RAM) đang chạy... Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
+              Start-Sleep -Seconds 10
+          }
+
+  # Job 2: Windows Server với Docker (4vCPU | 8GB RAM)
+  windows-docker:
+    if: github.event.inputs.win_version != '2025-native'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    
+    steps:
+      - name: 🛠️ ĐANG KHỞI TẠO WINDOWS SERVER (4vCPU | 8GB RAM)
+        run: |
+          # Chạy ẩn toàn bộ quá trình cài đặt
+          sudo apt-get update > /dev/null 2>&1
+          
+          # Xác định version name
+          VERSION="${{ github.event.inputs.win_version }}"
+          if [ "$VERSION" = "2025-docker" ]; then
+            VERSION="2025"
+          fi
+          
+          cat <<EOF > docker-compose.yml
+          version: "3.9"
+          services:
+            windows:
+              image: dockurr/windows
+              container_name: windows
+              privileged: true
+              environment:
+                VERSION: "$VERSION"
+                USERNAME: "windows"
+                PASSWORD: "window@123456"
+                RAM_SIZE: "8G"
+                CPU_CORES: "4"
+                DISK_SIZE: "60G"
+              devices: [ "/dev/kvm" ]
+              ports:
+                - "3389:3389"
+          EOF
+          docker compose up -d > /dev/null 2>&1
+          
+          # Tải Kami Tunnel ẩn danh
+          wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
+          tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
+          chmod +x kami-tunnel
+          
+          # Chạy Kami Tunnel
+          ./kami-tunnel 3389 > /dev/null 2>&1 &
+
+      - name: 🎉 THÔNG TIN KẾT NỐI WINDOWS SERVER (Docker)
+        run: |
+          VERSION="${{ github.event.inputs.win_version }}"
+          if [ "$VERSION" = "2025-docker" ]; then
+            VERSION_NAME="2025"
+          else
+            VERSION_NAME="$VERSION"
+          fi
+          
+          echo "🔄 Đang kiểm tra tín hiệu từ Windows Server $VERSION_NAME (4vCPU | 8GB RAM)..."
+          
+          # Vòng lặp chờ cho đến khi có file IP
+          while [ ! -f kami_tunnel.txt ]; do sleep 2; done
+          
+          # Đợi file có nội dung IP
+          RDP_IP=""
+          while [ -z "$RDP_IP" ]; do
+            RDP_IP=$(cat kami_tunnel.txt)
+            sleep 2
+          done
+
+          echo ""
+          echo "┌──────────────────────────────────────────────────────────┐"
+          echo "│    🎉 WINDOWS SERVER $VERSION_NAME READY! (4vCPU | 8GB RAM)    │"
+          echo "├──────────────────────────────────────────────────────────┤"
+          echo "│ 🌐 Địa chỉ IP : $RDP_IP"
+          echo "│ 👤 Tài khoản  : windows"
+          echo "│ 🔐 Mật khẩu   : window@123456"
+          echo "│ 📍 Cổng RDP   : 3389"
+          echo "│ 💻 Cấu hình   : 4 vCPU | 8GB RAM"
+          echo "└──────────────────────────────────────────────────────────┘"
+          echo ""
+          echo "KAMI_IP=$RDP_IP" >> $GITHUB_ENV
+          echo "WIN_VERSION=$VERSION_NAME" >> $GITHUB_ENV
+
+      - name: ⏳ DUY TRÌ PHIÊN WINDOWS (Docker)
+        run: |
+          # Giữ workflow chạy và update log ngắn gọn
+          for i in {1..72}; do
+            echo "💎 [$(date +%H:%M:%S)] Windows Server $WIN_VERSION (4vCPU | 8GB RAM) đang chạy. IP: $KAMI_IP"
+            sleep 300
+          done
