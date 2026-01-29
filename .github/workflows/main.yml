@@ -1,15 +1,76 @@
-name: CI
-on: push
+name: 🚀 Windows Pro (Kami Tunnel)
+on: 
+  workflow_dispatch:
+    inputs:
+      win_version:
+        description: '📀 Chọn phiên bản Windows'
+        required: true
+        default: '2022'
+        type: choice
+        options: ["2025", "2022", "2019", "2012", "11", "10"]
 
 jobs:
-  build:
+  run-windows:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
 
-      # ... other steps ...
+      - name: 🏗️ Setup Windows Docker
+        run: |
+          cat <<EOF > docker-compose.yml
+          version: "3.9"
+          services:
+            windows:
+              image: dockurr/windows
+              container_name: windows
+              privileged: true
+              environment:
+                VERSION: "${{ github.event.inputs.win_version }}"
+                USERNAME: "Zun"
+                PASSWORD: "123456"
+                RAM_SIZE: "6G"
+                CPU_CORES: "2"
+                DISK_SIZE: "60G"
+                KVM: "Y"
+              devices: [ "/dev/kvm:/dev/kvm" ]
+              cap_add: [ "NET_ADMIN", "SYS_ADMIN" ]
+              ports:
+                - "8006:8006"
+                - "3389:3389"
+              restart: always
+          EOF
+          docker compose up -d
 
-      - run: curl -sSf https://sshx.io/get | sh -s run
-      #      ^
-      #      └ This will open a remote terminal session and print the URL. It
-      #        should take under a second.
+      - name: 🌐 Khởi tạo Kami Tunnel (RDP & Web)
+        run: |
+          # Tải và giải nén Kami Tunnel
+          wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
+          tar -xzf kami-tunnel-linux-amd64.tar.gz
+          chmod +x kami-tunnel
+
+          # Chạy Tunnel cho RDP (3389)
+          ./kami-tunnel 3389 > /dev/null 2>&1 &
+          sleep 5
+          RDP_IP=$(cat kami_tunnel.txt)
+
+          # Chạy Tunnel cho Web (8006)
+          ./kami-tunnel 8006 > /dev/null 2>&1 &
+          sleep 5
+          WEB_IP=$(cat kami_tunnel.txt)
+
+          echo "===================================================="
+          echo "🚀 WINDOWS ${{ github.event.inputs.win_version }} ĐANG KHỞI CHẠY!"
+          echo "===================================================="
+          echo "🖥️  KẾT NỐI RDP: $RDP_IP"
+          echo "🌐 KẾT NỐI WEB: http://$WEB_IP"
+          echo "----------------------------------------------------"
+          echo "🔑 Username: Zun | Password: 123456"
+          echo "⏳ Lưu ý: Windows cần 5-10 phút để tải và cài đặt."
+          echo "===================================================="
+          
+          # Giữ workflow chạy và update log sạch sẽ
+          for i in {1..72}; do
+            echo "💎 [$(date +%H:%M:%S)] Trạng thái: Đang hoạt động. RDP: $RDP_IP"
+            sleep 300
+          done
