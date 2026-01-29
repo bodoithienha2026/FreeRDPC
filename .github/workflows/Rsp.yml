@@ -87,4 +87,3 @@ jobs:
               Write-Host "`r💎 IP: $env:KAMI_IP | Admin | Còn lại: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Magenta
               Start-Sleep -Seconds 1
           }
-```
