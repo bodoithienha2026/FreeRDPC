@@ -26,7 +26,7 @@ jobs:
           Write-Host "🕒 Thời gian: ${{ github.event.inputs.duration }}`n" -ForegroundColor Magenta
           Write-Host "✅ Hệ thống đã sẵn sàng!" -ForegroundColor Green
 
-      # 2. CẤU HÌNH USER ADMIN & RDP (window@123456)
+      # 2. CẤU HÌNH USER ADMIN & RDP
       - name: 👤 THIẾT LẬP TÀI KHOẢN ADMIN
         run: |
           Write-Host "`n🛠️  ĐANG TẠO USER: Admin..." -ForegroundColor Yellow
@@ -42,16 +42,15 @@ jobs:
 
       # 3. KÍCH HOẠT KAMI TUNNEL
       - name: 🌐 KÍCH HOẠT KAMI TUNNEL
-        shell: powershell
         run: |
           Write-Host "`n🌐 ĐANG TẢI KAMI..." -ForegroundColor Cyan
-          Invoke-WebRequest -Uri "https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz" -OutFile "kami-tunnel.tar.gz"
+          Invoke-WebRequest -Uri https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz -OutFile kami-tunnel.tar.gz
           
           Write-Host "📦 GIẢI NÉN..." -ForegroundColor Yellow
           tar -xzf kami-tunnel.tar.gz
           
           Write-Host "🚀 CHẠY TUNNEL PORT 3389..." -ForegroundColor Green
-          Start-Process -FilePath ".\kami-tunnel.exe" -ArgumentList "3389" -NoNewWindow
+          Start-Process -FilePath .\kami-tunnel.exe -ArgumentList 3389 -NoNewWindow
 
       # 4. HIỂN THỊ THÔNG TIN KẾT NỐI
       - name: 🎉 THÔNG TIN KẾT NỐI
