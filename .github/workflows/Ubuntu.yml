@@ -1,0 +1,76 @@
+name: 🚀 Ubuntu 
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: '🕐 Thời gian sử dụng'
+        required: false
+        default: '5h40m'
+        type: choice
+        options:
+        - '1h'
+        - '3h' 
+        - '5h40m'
+
+jobs:
+  Ubuntu-Setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛠️ ĐANG KHỞI TẠO UBUNTU SERVER 2025
+        run: |
+          # Ẩn toàn bộ log cài đặt rườm rà
+          sudo apt-get update > /dev/null 2>&1
+          sudo apt-get install -y xfce4 xfce4-goodies xrdp > /dev/null 2>&1
+          
+          # Cấu hình User: ubuntu | Pass: Ubuntu@123456
+          sudo useradd -m ubuntu
+          echo "ubuntu:Ubuntu@123456" | sudo chpasswd
+          sudo usermod -aG sudo ubuntu
+          
+          # Cấu hình môi trường Desktop cho RDP
+          echo "xfce4-session" > /home/ubuntu/.xsession
+          sudo chown ubuntu:ubuntu /home/ubuntu/.xsession
+          sudo systemctl enable xrdp > /dev/null 2>&1
+          sudo systemctl start xrdp > /dev/null 2>&1
+          
+          # Tải và chạy Kami Tunnel (Đúng lệnh của bạn)
+          wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
+          tar -xzf kami-tunnel-linux-amd64.tar.gz
+          chmod +x kami-tunnel
+          ./kami-tunnel 3389 > /dev/null 2>&1 &
+
+      - name: 🎉 THÔNG TIN KẾT NỐI UBUNTU
+        run: |
+          echo "🔄 Đang chờ xác nhận từ Zun x Kami Tunnel..."
+          # Đợi cho đến khi file kami_tunnel.txt có IP
+          while [ ! -f kami_tunnel.txt ]; do sleep 2; done
+          
+          RDP_IP=""
+          while [ -z "$RDP_IP" ]; do
+            RDP_IP=$(cat kami_tunnel.txt)
+            sleep 2
+          done
+          
+          echo ""
+          echo "┌────────────────────────────────────────────────────┐"
+          echo "│          🎉 UBUNTU RDP READY (By Zun)              │"
+          echo "├────────────────────────────────────────────────────┤"
+          echo "│ 🖥️ Hệ điều hành: Ubuntu Desktop (XFCE)             │"
+          echo "│ 🌐 Địa chỉ IP  : $RDP_IP"
+          echo "│ 👤 Tài khoản   : ubuntu"
+          echo "│ 🔐 Mật khẩu    : Ubuntu@123456"
+          echo "│ 📍 Cổng RDP    : 3389"
+          echo "├────────────────────────────────────────────────────┤"
+          echo "│ ⚡ Cấu hình    : 4 Cores CPU | 16 GB RAM            │"
+          echo "└────────────────────────────────────────────────────┘"
+          echo ""
+          echo "IP_ADDR=$RDP_IP" >> $GITHUB_ENV
+
+      - name: ⏳ DUY TRÌ PHIÊN
+        run: |
+          # Giữ workflow chạy sạch sẽ
+          for i in {1..72}; do
+            echo "💎 [$(date +%H:%M:%S)] Ubuntu Server đang chạy. IP: $IP_ADDR"
+            sleep 300
+          done
