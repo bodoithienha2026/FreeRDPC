@@ -2,1142 +2,1167 @@
 
 <div align="center">
 
-![GitHub Workflow](https://img.shields.io/badge/GitHub-Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.0-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Production-green?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions)
 
-**Triển khai Windows & Ubuntu Desktop với Remote Desktop Protocol (RDP) trên GitHub Actions**
+**🚀 Triển khai Windows & Ubuntu Desktop với Remote Desktop Protocol (RDP) trên GitHub Actions**
 
-[🚀 Bắt đầu](#-cài-đặt) • [📖 Hướng dẫn](#-hướng-dẫn-sử-dụng) • [⚙️ Cấu hình](#️-các-phiên-bản-hỗ-trợ) • [🔧 Khắc phục](#-khắc-phục-sự-cố) • [📞 Hỗ trợ](#-hỗ-trợ)
+**⚠️ PHIÊN BẢN CHÍNH THỨC - BẢN QUYỀN BẢO HỘ**
+
+[📖 Hướng dẫn](#-hướng-dẫn-sử-dụng) • [⚡ Cài đặt](#-cài-đặt-nhanh) • [🔐 Bản quyền](#-thông-báo-bản-quyền) • [⚠️ Cảnh báo](#️-cảnh-báo-quan-trọng) • [📞 Hỗ trợ](#-hỗ-trợ)
 
 </div>
 
 ---
 
-## 📋 Mục lục
+## 🔐 **THÔNG BÁO BẢN QUYỀN**
 
-- [✨ Tính năng](#-tính-năng)
-- [🎯 Yêu cầu](#-yêu-cầu)
-- [🚀 Cài đặt](#-cài-đặt)
-- [📖 Hướng dẫn sử dụng](#-hướng-dẫn-sử-dụng)
-- [⚙️ Các phiên bản hỗ trợ](#️-các-phiên-bản-hỗ-trợ)
-- [🔐 Thông tin đăng nhập](#-thông-tin-đăng-nhập)
-- [🌐 Kết nối RDP](#-kết-nối-rdp)
-- [📊 Giám sát tiến trình](#-giám-sát-tiến-trình)
-- [⏱️ Thời gian sử dụng](#️-thời-gian-sử-dụng)
-- [🔧 Khắc phục sự cố](#-khắc-phục-sự-cố)
-- [❓ FAQ](#-faq)
-- [📝 Lưu ý quan trọng](#-lưu-ý-quan-trọng)
-- [🤝 Đóng góp](#-đóng-góp)
-- [📞 Hỗ trợ](#-hỗ-trợ)
-- [📄 License](#-license)
-
----
-
-## ✨ Tính năng
-
-### 🎯 Điểm nổi bật
-
-- ✅ **Đa nền tảng**: Hỗ trợ Windows Server (2012-2025), Windows 10/11, Ubuntu Desktop
-- ✅ **Hiệu năng cao**: 4 vCPU với 8GB-16GB RAM tùy cấu hình
-- ✅ **Kết nối nhanh**: Sử dụng Kami Tunnel cho kết nối RDP công khai
-- ✅ **Web Viewer**: Theo dõi trực tiếp tiến trình cài đặt qua trình duyệt (port 8006)
-- ✅ **Tự động hóa hoàn toàn**: Không cần cấu hình thủ công
-- ✅ **Miễn phí**: Sử dụng GitHub Actions Runners miễn phí
-
-### 🔥 Tính năng chi tiết
-
-| Tính năng | Mô tả |
-|-----------|-------|
-| **Multiple OS** | Windows Server 2012/2019/2022/2025, Windows 10/11, Ubuntu 24.04 |
-| **High Performance** | Native: 4 vCPU + 16GB RAM / Docker: 4 vCPU + 8GB RAM |
-| **Public IP** | Tự động tạo IP công khai với Kami Tunnel |
-| **Web Console** | Xem màn hình cài đặt Windows qua HTTP (port 8006) |
-| **Auto Setup** | Tự động cài đặt RDP, tạo user, cấu hình firewall |
-| **Long Session** | Thời gian chạy tối đa 6 giờ (360 phút) |
-
----
-
-## 🎯 Yêu cầu
-
-### Điều kiện tiên quyết
-
-1. **Tài khoản GitHub**
-   - Tài khoản GitHub (miễn phí hoặc Pro)
-   - GitHub Actions phải được bật (mặc định bật)
-
-2. **Repository**
-   - Fork hoặc tạo repository mới
-   - Thêm file workflow vào `.github/workflows/`
-
-3. **Kiến thức cơ bản**
-   - Hiểu biết cơ bản về GitHub Actions
-   - Biết cách kết nối RDP (Remote Desktop)
-
-### Giới hạn GitHub Actions
-
-| Loại tài khoản | Thời gian/tháng | Đồng thời |
-|----------------|-----------------|-----------|
-| **Free** | 2,000 phút | 1 job |
-| **Pro** | 3,000 phút | 5 jobs |
-| **Team** | 10,000 phút | 15 jobs |
-| **Enterprise** | 50,000 phút | 50 jobs |
-
-> 💡 **Lưu ý**: Mỗi lần chạy tối đa 360 phút (6 giờ)
-
----
-
-## 🚀 Cài đặt
-
-### Bước 1: Fork Repository
-
-```bash
-# Truy cập repository
-https://github.com/zun209384-lgtm/window
-
-# Nhấn nút "Fork" ở góc phải trên
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║                    ⚠️  COPYRIGHT NOTICE  ⚠️                            ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  📜 COPYRIGHT © 2024-2026 ZUN209384-LGTM                              ║
+║  🏢 ALL RIGHTS RESERVED                                                ║
+║                                                                        ║
+║  Phần mềm này được bảo hộ bởi luật bản quyền quốc tế.                ║
+║  Việc sao chép, phân phối, sửa đổi hoặc sử dụng không được phép      ║
+║  là NGHIÊM CẤM và có thể dẫn đến hậu quả pháp lý nghiêm trọng.       ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
 ```
 
-### Bước 2: Tạo file workflow
+### 📋 **Điều khoản sử dụng**
 
-1. Truy cập repository của bạn
-2. Vào thư mục `.github/workflows/`
-3. Tạo file mới: `Windows.yml`
-4. Copy nội dung từ file `Windows.yml` trong repo
+#### ✅ **ĐƯỢC PHÉP:**
 
-### Bước 3: Commit và Push
+<table>
+<tr>
+<th>Hành động</th>
+<th>Điều kiện</th>
+</tr>
+<tr>
+<td>✅ Sử dụng cá nhân</td>
+<td>Cho mục đích học tập, testing, development</td>
+</tr>
+<tr>
+<td>✅ Fork repository</td>
+<td>Giữ nguyên thông báo bản quyền và credits</td>
+</tr>
+<tr>
+<td>✅ Chia sẻ link</td>
+<td>Link đến repository gốc, không reupload</td>
+</tr>
+<tr>
+<td>✅ Báo cáo lỗi</td>
+<td>Qua GitHub Issues chính thức</td>
+</tr>
+<tr>
+<td>✅ Đề xuất cải tiến</td>
+<td>Qua Pull Requests với credit đầy đủ</td>
+</tr>
+</table>
+
+#### ❌ **NGHIÊM CẤM:**
+
+<table>
+<tr>
+<th>Hành động</th>
+<th>Hậu quả</th>
+</tr>
+<tr>
+<td>❌ Xóa/thay đổi thông tin bản quyền</td>
+<td>Vi phạm DMCA - Report tức thì</td>
+</tr>
+<tr>
+<td>❌ Sửa đổi code và claim là của bạn</td>
+<td>Vi phạm bản quyền - Khóa repository</td>
+</tr>
+<tr>
+<td>❌ Phân phối thương mại</td>
+<td>Yêu cầu license - Pháp lý nếu vi phạm</td>
+</tr>
+<tr>
+<td>❌ Reupload lên platform khác</td>
+<td>DMCA Takedown - Khóa tài khoản</td>
+</tr>
+<tr>
+<td>❌ Xóa credits/attribution</td>
+<td>Vi phạm nghiêm trọng - Pháp lý</td>
+</tr>
+</table>
+
+### 🏛️ **Bảo vệ pháp lý**
+
+```
+Workflow này được bảo hộ bởi:
+
+📜 DMCA (Digital Millennium Copyright Act)
+   → Mọi vi phạm sẽ bị report và takedown tức thì
+
+🌐 Berne Convention
+   → Bản quyền tự động có hiệu lực quốc tế
+
+⚖️ GitHub Terms of Service
+   → Vi phạm bản quyền = Khóa repository/account
+
+🔒 Intellectual Property Rights
+   → Code, design, documentation đều được bảo hộ
+```
+
+### 📝 **Cách sử dụng hợp pháp**
+
+**Bước 1: Fork với credits đầy đủ**
+```bash
+# Fork repository từ GitHub UI
+# KHÔNG được xóa/thay đổi thông báo bản quyền trong README
+# KHÔNG được xóa credits trong code comments
+```
+
+**Bước 2: Giữ nguyên attribution**
+```yaml
+# ❌ KHÔNG XÓA các dòng comment này:
+# Copyright © 2024-2026 Zun209384-lgtm
+# Original: https://github.com/zun209384-lgtm/window
+# All rights reserved
+
+# ✅ PHẢI GIỮ NGUYÊN trong mọi phiên bản fork
+```
+
+**Bước 3: Link về repository gốc**
+```markdown
+# Trong README của bạn, PHẢI có:
+
+## Credits
+This project is forked from [zun209384-lgtm/window](https://github.com/zun209384-lgtm/window)
+
+Original Author: [Zun209384-lgtm](https://github.com/zun209384-lgtm)
+
+All rights reserved to the original author.
+```
+
+---
+
+## ⚠️ **CẢNH BÁO QUAN TRỌNG**
+
+### 🚨 **CẢNH BÁO BẢO MẬT VÀ PHÁP LÝ**
+
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║                  ⚠️  CRITICAL WARNINGS  ⚠️                             ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  🔴 KHÔNG SỬA ĐỔI FILE .YML WORKFLOW NẾU KHÔNG HIỂU RÕ                ║
+║     → Có thể gây lỗi nghiêm trọng hoặc vi phạm bản quyền              ║
+║                                                                        ║
+║  🔴 KHÔNG XÓA/THAY ĐỔI THÔNG BÁO BẢN QUYỀN                            ║
+║     → Vi phạm DMCA, sẽ bị report và takedown                          ║
+║                                                                        ║
+║  🔴 KHÔNG SỬ DỤNG CHO MỤC ĐÍCH BẤT HỢP PHÁP                            ║
+║     → Mining, hacking, spam, DDoS, illegal activities                 ║
+║     → GitHub sẽ khóa account vĩnh viễn                                ║
+║                                                                        ║
+║  🔴 KHÔNG LƯU TRỮ DỮ LIỆU NHẠY CẢM                                     ║
+║     → Mọi dữ liệu sẽ BỊ XÓA sau 6 giờ                                 ║
+║     → Không có backup, không thể khôi phục                            ║
+║                                                                        ║
+║  🔴 KHÔNG CHIA SẺ IP CÔNG KHAI VỚI NGƯỜI LẠ                            ║
+║     → Password mặc định ai cũng biết                                  ║
+║     → Có thể bị truy cập trái phép                                    ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+```
+
+### ⛔ **NGHIÊM CẤM TUYỆT ĐỐI**
+
+| Hành vi | Hậu quả | Mức độ nghiêm trọng |
+|---------|---------|---------------------|
+| **Cryptocurrency Mining** | Ban account GitHub vĩnh viễn | 🔴 CRITICAL |
+| **DDoS / Network attacks** | Report lên GitHub + Police | 🔴 CRITICAL |
+| **Hosting malware/virus** | Legal action + Account ban | 🔴 CRITICAL |
+| **Spam / Phishing operations** | Permanent ban | 🔴 CRITICAL |
+| **Torrenting / P2P sharing** | Account suspension | 🟠 HIGH |
+| **Running game servers** | Waste resources - Warning | 🟡 MEDIUM |
+| **Production website hosting** | Against ToS - Warning | 🟡 MEDIUM |
+
+### 🛡️ **GitHub Actions - Terms of Service**
+
+```
+Bạn PHẢI tuân thủ GitHub Actions Usage Limits:
+
+✅ ĐƯỢC PHÉP:
+   • Development & testing
+   • CI/CD pipelines
+   • Temporary workspaces
+   • Learning & education
+   • POC (Proof of Concepts)
+
+❌ KHÔNG ĐƯỢC PHÉP:
+   • Mining (crypto hoặc bất kỳ loại nào)
+   • Long-running production services
+   • Content delivery / file hosting
+   • Website hosting
+   • Proxy / VPN services
+   • Bất kỳ hoạt động vi phạm GitHub ToS
+
+Vi phạm = Account ban vĩnh viễn, không thể khôi phục!
+```
+
+### 💾 **Cảnh báo về dữ liệu**
+
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║                     💾 DATA LOSS WARNING                               ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  ⚠️  MỌI DỮ LIỆU SẼ BỊ XÓA HOÀN TOÀN SAU KHI WORKFLOW KẾT THÚC       ║
+║                                                                        ║
+║  • Tối đa 6 giờ/session                                               ║
+║  • Không có backup tự động                                            ║
+║  • Không thể khôi phục sau khi xóa                                    ║
+║  • Không có warning trước khi kết thúc                                ║
+║                                                                        ║
+║  📋 CHECKLIST TRƯỚC KHI KẾT THÚC:                                     ║
+║  ☐ Upload files quan trọng lên cloud (Google Drive, Dropbox, etc)    ║
+║  ☐ Push code lên GitHub repository                                    ║
+║  ☐ Export databases nếu có                                            ║
+║  ☐ Save screenshots/logs nếu cần                                      ║
+║  ☐ Download mọi files cần thiết                                       ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## 📚 **MỤC LỤC**
+
+- [🔐 Thông báo bản quyền](#-thông-báo-bản-quyền)
+- [⚠️ Cảnh báo quan trọng](#️-cảnh-báo-quan-trọng)
+- [✨ Tính năng](#-tính-năng)
+- [⚡ Cài đặt nhanh](#-cài-đặt-nhanh)
+- [📖 Hướng dẫn sử dụng](#-hướng-dẫn-sử-dụng)
+- [🖥️ Các phiên bản hệ điều hành](#️-các-phiên-bản-hệ-điều-hành)
+- [🔑 Thông tin đăng nhập](#-thông-tin-đăng-nhập)
+- [🌐 Kết nối RDP](#-kết-nối-rdp)
+- [🖥️ Web Viewer](#️-web-viewer)
+- [🔧 Khắc phục sự cố](#-khắc-phục-sự-cố)
+- [❓ FAQ](#-faq)
+- [📞 Hỗ trợ](#-hỗ-trợ)
+- [🙏 Credits](#-credits)
+
+---
+
+## ✨ **TÍNH NĂNG**
+
+### 🎯 **Điểm nổi bật chính**
+
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║                         ⭐ KEY FEATURES                                ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  🌟 8 HỆ ĐIỀU HÀNH                                                     ║
+║     • Windows Server 2025, 2022, 2019, 2012                           ║
+║     • Windows 11 & 10 Professional                                     ║
+║     • Ubuntu 24.04 Desktop                                             ║
+║                                                                        ║
+║  ⚡ HIỆU NĂNG CAO                                                       ║
+║     • Native: 4 vCPU + 16GB RAM                                        ║
+║     • Docker: 4 vCPU + 8GB RAM                                         ║
+║     • SSD Storage: 60-120GB                                            ║
+║                                                                        ║
+║  🌐 PUBLIC IP TỰ ĐỘNG                                                  ║
+║     • Kami Tunnel integration                                          ║
+║     • Kết nối từ mọi nơi trên thế giới                                ║
+║     • Không cần VPN hay port forwarding                               ║
+║                                                                        ║
+║  🖥️ WEB VIEWER (Docker versions)                                       ║
+║     • Xem màn hình Windows qua browser                                ║
+║     • Monitor installation progress                                    ║
+║     • Port 8006 - HTTP access                                          ║
+║                                                                        ║
+║  🤖 TỰ ĐỘNG HÓA 100%                                                   ║
+║     • Zero manual configuration                                        ║
+║     • Auto RDP setup                                                   ║
+║     • Auto user creation                                               ║
+║     • Auto firewall config                                             ║
+║                                                                        ║
+║  💰 HOÀN TOÀN MIỄN PHÍ                                                 ║
+║     • GitHub Actions Free Tier                                         ║
+║     • 2,000 phút/tháng (Free account)                                 ║
+║     • Không cần credit card                                           ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+```
+
+### 🔥 **Tính năng Version 2.0**
+
+<table>
+<tr>
+<th width="30%">Tính năng</th>
+<th width="70%">Mô tả chi tiết</th>
+</tr>
+<tr>
+<td><b>🔄 Dual Tunnel Support</b></td>
+<td>
+• Xử lý chính xác 2 tunnel đồng thời<br>
+• RDP Port 3389 + Web Viewer Port 8006<br>
+• Smart IP detection và phân biệt IP<br>
+• Automatic backup mechanism
+</td>
+</tr>
+<tr>
+<td><b>🛡️ Error Handling</b></td>
+<td>
+• 60x Retry mechanism (120s timeout)<br>
+• IP validation với regex<br>
+• Comprehensive logging<br>
+• Intelligent fallback strategies
+</td>
+</tr>
+<tr>
+<td><b>🎨 Professional UI</b></td>
+<td>
+• Beautiful box design với Unicode<br>
+• Clear sections: RDP / Web / Resources<br>
+• Real-time status với timestamp<br>
+• Color-coded information
+</td>
+</tr>
+<tr>
+<td><b>⚡ Performance</b></td>
+<td>
+• Optimized timing giữa các bước<br>
+• Faster boot time<br>
+• Stable connections<br>
+• Better resource management
+</td>
+</tr>
+</table>
+
+---
+
+## ⚡ **CÀI ĐẶT NHANH**
+
+### 🚀 **Quick Start - 3 Bước**
+
+#### **BƯỚC 1: Fork Repository**
 
 ```bash
-git add .github/workflows/Windows.yml
-git commit -m "Add RDP workflow"
+# Truy cập:
+https://github.com/zun209384-lgtm/window
+
+# Click nút "Fork" ở góc phải trên
+
+# ⚠️ LƯU Ý: 
+# - KHÔNG được xóa thông báo bản quyền
+# - KHÔNG được thay đổi credits
+# - GIỮ NGUYÊN tất cả comments về author
+```
+
+#### **BƯỚC 2: Kích Hoạt Workflow**
+
+```
+1. Vào repository đã fork
+2. Tab "Actions"
+3. Click "I understand my workflows, go ahead and enable them"
+4. Chọn "🖥️ REMOTE DESKTOP SERVICES"
+5. Click "Run workflow"
+```
+
+#### **BƯỚC 3: Chọn OS và Chạy**
+
+```
+1. Dropdown "📀 Select Operating System"
+2. Chọn 1 trong 8 options
+3. Click "Run workflow" để confirm
+4. Đợi 3-15 phút tùy OS
+5. Lấy thông tin kết nối từ logs
+```
+
+### 📋 **Chi tiết từng phương pháp**
+
+<details>
+<summary><b>Phương pháp 1: Fork (Đề xuất cho người mới)</b></summary>
+
+**Bước 1: Fork**
+```
+https://github.com/zun209384-lgtm/window
+→ Click "Fork"
+→ Chọn owner là tài khoản của bạn
+→ Giữ nguyên repository name hoặc đổi tên
+→ Click "Create fork"
+```
+
+**Bước 2: Enable Actions**
+```
+Vào repository đã fork
+→ Tab "Actions"
+→ "I understand my workflows, go ahead and enable them"
+```
+
+**Bước 3: Run**
+```
+→ "🖥️ REMOTE DESKTOP SERVICES"
+→ "Run workflow"
+→ Chọn OS
+→ "Run workflow" để confirm
+```
+
+</details>
+
+<details>
+<summary><b>Phương pháp 2: Tạo Repository mới</b></summary>
+
+**Bước 1: Tạo repo**
+```bash
+# Trên GitHub.com
+New repository
+→ Name: rdp-services
+→ Public hoặc Private
+→ Add README
+→ Create repository
+```
+
+**Bước 2: Clone về máy**
+```bash
+git clone https://github.com/[your-username]/rdp-services.git
+cd rdp-services
+```
+
+**Bước 3: Tạo workflow**
+```bash
+mkdir -p .github/workflows
+curl -o .github/workflows/rdp.yml \
+  https://raw.githubusercontent.com/zun209384-lgtm/window/main/Windows_Fixed.yml
+```
+
+**Bước 4: Commit và push**
+```bash
+git add .github/workflows/rdp.yml
+git commit -m "Add RDP workflow v2.0"
 git push origin main
 ```
 
-### Bước 4: Kích hoạt workflow
+**⚠️ QUAN TRỌNG: Giữ nguyên credits**
+```yaml
+# PHẢI thêm vào đầu file README.md:
 
-1. Vào tab **Actions** trong repository
-2. Chọn workflow **"🖥️ REMOTE DESKTOP SERVICES"**
-3. Nhấn **"Run workflow"**
+## Credits
+Forked from: https://github.com/zun209384-lgtm/window
+Author: Zun209384-lgtm
+All rights reserved.
+```
 
----
+</details>
 
-## 📖 Hướng dẫn sử dụng
-
-### 🎬 Khởi chạy workflow
-
-#### Phương pháp 1: Giao diện Web (Đề xuất)
-
-1. **Truy cập repository GitHub của bạn**
-   ```
-   https://github.com/[username]/[repository]
-   ```
-
-2. **Chọn tab Actions**
-   - Click vào tab "Actions" ở thanh menu trên cùng
-
-3. **Chọn workflow**
-   - Tìm và click vào "🖥️ REMOTE DESKTOP SERVICES"
-
-4. **Khởi chạy**
-   - Nhấn nút **"Run workflow"** (màu xanh)
-   - Chọn hệ điều hành từ dropdown menu
-   - Nhấn **"Run workflow"** để xác nhận
-
-#### Phương pháp 2: GitHub CLI
+<details>
+<summary><b>Phương pháp 3: GitHub CLI (Advanced)</b></summary>
 
 ```bash
-# Cài đặt GitHub CLI (nếu chưa có)
-# macOS/Linux
-brew install gh
-
-# Windows
-winget install GitHub.cli
+# Cài đặt gh CLI
+brew install gh  # macOS
+winget install GitHub.cli  # Windows
 
 # Đăng nhập
 gh auth login
 
-# Chạy workflow
-gh workflow run "Windows.yml" \
+# Fork repository
+gh repo fork zun209384-lgtm/window --clone
+
+# Hoặc tạo mới
+gh repo create rdp-services --public --clone
+cd rdp-services
+
+# Download workflow
+mkdir -p .github/workflows
+curl -o .github/workflows/rdp.yml \
+  https://raw.githubusercontent.com/zun209384-lgtm/window/main/Windows_Fixed.yml
+
+# Commit
+git add .
+git commit -m "Add RDP workflow"
+git push
+
+# Run workflow
+gh workflow run rdp.yml \
   -f os_version="Windows Server 2025 (Native - 4vCPU | 16GB RAM)"
 ```
 
-### 📊 Theo dõi quá trình
-
-1. **Xem log realtime**
-   - Click vào workflow run đang chạy
-   - Xem các step đang thực hiện
-
-2. **Nhận thông tin kết nối**
-   - Đợi step "🌐 Connection Information" hoàn thành
-   - Copy thông tin IP, username, password
-
-3. **Kết nối RDP**
-   - Sử dụng thông tin vừa nhận để kết nối
+</details>
 
 ---
 
-## ⚙️ Các phiên bản hỗ trợ
+## 📖 **HƯỚNG DẪN SỬ DỤNG**
 
-### 🪟 Windows Systems
+### 🎬 **Quy trình sử dụng đầy đủ**
 
-#### 1. Windows Server 2025 (Native)
-```yaml
-Configuration: 4 vCPU | 16GB RAM
-Runner: windows-latest
-Deployment: Native GitHub Runner
-Boot Time: ~3-5 minutes
-Best For: Production workloads, heavy tasks
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║                     📋 WORKFLOW EXECUTION STEPS                        ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  STEP 1: Khởi chạy Workflow                                           ║
+║    ├─ Vào tab Actions                                                 ║
+║    ├─ Chọn "🖥️ REMOTE DESKTOP SERVICES"                               ║
+║    └─ Click "Run workflow"                                            ║
+║                                                                        ║
+║  STEP 2: Chọn Hệ điều hành                                            ║
+║    ├─ Dropdown: 8 options available                                   ║
+║    ├─ Windows Server: 2025/2022/2019/2012                             ║
+║    ├─ Windows Desktop: 11/10 Pro                                      ║
+║    └─ Linux: Ubuntu 24.04 Desktop                                     ║
+║                                                                        ║
+║  STEP 3: Đợi hệ thống khởi động                                       ║
+║    ├─ Native: 3-7 phút                                                ║
+║    └─ Docker: 10-15 phút                                              ║
+║                                                                        ║
+║  STEP 4: Lấy thông tin kết nối                                        ║
+║    ├─ Click vào step "🌐 Connection Information"                      ║
+║    ├─ Copy: IP:Port, Username, Password                              ║
+║    └─ Copy: Web Viewer URL (nếu có)                                   ║
+║                                                                        ║
+║  STEP 5: Kết nối RDP                                                  ║
+║    ├─ Mở RDP Client                                                   ║
+║    ├─ Nhập thông tin                                                  ║
+║    └─ Connect                                                         ║
+║                                                                        ║
+║  STEP 6: Sử dụng hệ thống                                             ║
+║    ├─ Max: 6 giờ (360 phút)                                           ║
+║    └─ Session tự động kết thúc sau 6h                                 ║
+║                                                                        ║
+║  STEP 7: Backup dữ liệu                                               ║
+║    ├─ Upload lên cloud storage                                        ║
+║    ├─ Push code lên GitHub                                            ║
+║    └─ Download files quan trọng                                       ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Đặc điểm:**
-- ⚡ Hiệu năng cao nhất
-- 🚀 Khởi động nhanh nhất
-- 💪 RAM lớn nhất (16GB)
-- ✅ Phù hợp công việc nặng
+### 📊 **Timeline chi tiết**
 
-#### 2. Windows Server 2025 (Docker)
-```yaml
-Configuration: 4 vCPU | 8GB RAM
-Runner: ubuntu-latest
-Deployment: Docker (dockurr/windows)
-Boot Time: ~10-15 minutes
-Best For: Testing, development
-Web Viewer: Port 8006 enabled
 ```
+Minute 0-1    ┌──────────────────────────────────────┐
+              │ 🚀 Workflow Queued & Starting        │
+              └──────────────────────────────────────┘
 
-**Đặc điểm:**
-- 🖥️ Xem tiến trình cài đặt qua web
-- 🔧 Linh hoạt cấu hình
-- 📦 Dễ dàng backup/restore
-- ⏱️ Thời gian khởi động lâu hơn
+Minute 1-15   ┌──────────────────────────────────────┐
+              │ 🔧 System Initialization             │
+              │ • Install packages                   │
+              │ • Configure RDP                      │
+              │ • Start tunnels                      │
+              │ • Boot OS (if Docker)                │
+              └──────────────────────────────────────┘
 
-#### 3. Windows Server 2022 (Docker)
-```yaml
-Configuration: 4 vCPU | 8GB RAM
-Runner: ubuntu-latest
-Deployment: Docker
-Version: Windows Server 2022
-Stability: Production Ready
+Minute 15-16  ┌──────────────────────────────────────┐
+              │ 🌐 Connection Info Ready             │
+              │ • RDP IP:Port available              │
+              │ • Web Viewer URL (Docker)            │
+              └──────────────────────────────────────┘
+
+Minute 16-360 ┌──────────────────────────────────────┐
+              │ ⏰ Active Session                    │
+              │ • Status update every 5 min          │
+              │ • User can connect & work            │
+              └──────────────────────────────────────┘
+
+Minute 360    ┌──────────────────────────────────────┐
+              │ 🛑 Workflow End                      │
+              │ • All data deleted                   │
+              │ • Connection closed                  │
+              └──────────────────────────────────────┘
 ```
-
-#### 4. Windows Server 2019 (Docker)
-```yaml
-Configuration: 4 vCPU | 8GB RAM
-Runner: ubuntu-latest
-Deployment: Docker
-Version: Windows Server 2019
-LTS: Long Term Support
-```
-
-#### 5. Windows Server 2012 (Docker)
-```yaml
-Configuration: 4 vCPU | 8GB RAM
-Runner: ubuntu-latest
-Deployment: Docker
-Version: Windows Server 2012 R2
-Legacy: For compatibility testing
-```
-
-#### 6. Windows 11 Professional (Docker)
-```yaml
-Configuration: 4 vCPU | 8GB RAM
-Runner: ubuntu-latest
-Deployment: Docker
-Version: Windows 11 Pro
-UI: Modern Windows 11 interface
-```
-
-#### 7. Windows 10 Professional (Docker)
-```yaml
-Configuration: 4 vCPU | 8GB RAM
-Runner: ubuntu-latest
-Deployment: Docker
-Version: Windows 10 Pro
-UI: Classic Windows 10 interface
-```
-
-### 🐧 Linux Systems
-
-#### 8. Ubuntu 24.04 Desktop RDP (Native)
-```yaml
-Configuration: 4 vCPU | 16GB RAM
-Runner: ubuntu-latest
-Desktop: XFCE4 (Lightweight)
-Boot Time: ~5-7 minutes
-Best For: Linux development, testing
-```
-
-**Đặc điểm:**
-- 🖱️ Giao diện đồ họa XFCE4
-- ⚡ Nhẹ và nhanh
-- 🔧 Full Ubuntu Desktop experience
-- 💻 16GB RAM cho development
 
 ---
 
-## 🔐 Thông tin đăng nhập
+## 🖥️ **CÁC PHIÊN BẢN HỆ ĐIỀU HÀNH**
 
-### Windows (Tất cả phiên bản)
+### 📊 **Bảng so sánh nhanh**
 
-| Thuộc tính | Giá trị |
-|------------|---------|
-| **Username** | `Admin` |
-| **Password** | `Window@123456` |
-| **User Type** | Administrator |
-| **Access Level** | Full Control |
+| OS | Type | RAM | Boot Time | Web Viewer | Performance |
+|----|------|-----|-----------|------------|-------------|
+| **Win Server 2025** | Native | 16GB | 3-5 min | ❌ | ⭐⭐⭐⭐⭐ |
+| **Win Server 2025** | Docker | 8GB | 10-15 min | ✅ | ⭐⭐⭐⭐ |
+| **Win Server 2022** | Docker | 8GB | 10-12 min | ✅ | ⭐⭐⭐⭐ |
+| **Win Server 2019** | Docker | 8GB | 10-12 min | ✅ | ⭐⭐⭐⭐ |
+| **Win Server 2012** | Docker | 8GB | 10-12 min | ✅ | ⭐⭐⭐ |
+| **Windows 11 Pro** | Docker | 8GB | 12-15 min | ✅ | ⭐⭐⭐⭐ |
+| **Windows 10 Pro** | Docker | 8GB | 10-12 min | ✅ | ⭐⭐⭐⭐ |
+| **Ubuntu 24.04** | Native | 16GB | 5-7 min | ❌ | ⭐⭐⭐⭐⭐ |
 
-### Ubuntu Desktop RDP
+### 🪟 **Windows Systems**
 
-| Thuộc tính | Giá trị |
-|------------|---------|
-| **Username** | `Admin` |
-| **Password** | `Ubuntu@123456` |
-| **User Type** | Sudo User |
-| **Access Level** | Root Access |
+<details>
+<summary><b>1. Windows Server 2025 (Native) - ⭐ RECOMMENDED</b></summary>
 
-> ⚠️ **Cảnh báo bảo mật**: Đây là thông tin đăng nhập mặc định. Không sử dụng cho môi trường production thực tế!
+```yaml
+╔══════════════════════════════════════════════════════════╗
+║         WINDOWS SERVER 2025 (NATIVE)                     ║
+╠══════════════════════════════════════════════════════════╣
+║  Runner      : windows-latest                            ║
+║  CPU         : 4 vCPU                                     ║
+║  RAM         : 16GB DDR4                                  ║
+║  Storage     : ~120GB SSD                                 ║
+║  Boot Time   : 3-5 minutes                                ║
+║  Performance : ⭐⭐⭐⭐⭐ (Highest)                           ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Ưu điểm:**
+- ⚡ Hiệu năng cao nhất - Native performance
+- 🚀 Boot nhanh nhất - Sẵn sàng trong 3-5 phút
+- 💪 RAM lớn nhất - 16GB cho multitasking
+- ✅ Ổn định tuyệt đối - Ít lỗi nhất
+
+**Hạn chế:**
+- 🌐 Không có Web Viewer
+- 🔧 Không linh hoạt như Docker
+
+**Phù hợp cho:**
+- Production workloads
+- Development cần compile code
+- Tasks cần RAM > 8GB
+
+</details>
+
+<details>
+<summary><b>2. Windows Server 2025 (Docker) - 🌐 WEB VIEWER</b></summary>
+
+```yaml
+╔══════════════════════════════════════════════════════════╗
+║         WINDOWS SERVER 2025 (DOCKER)                     ║
+╠══════════════════════════════════════════════════════════╣
+║  Runner      : ubuntu-latest                             ║
+║  Deployment  : Docker Container                          ║
+║  CPU         : 4 vCPU                                     ║
+║  RAM         : 8GB                                        ║
+║  Storage     : 60GB                                       ║
+║  Boot Time   : 10-15 minutes                              ║
+║  Web Viewer  : ✅ Port 8006                               ║
+║  Performance : ⭐⭐⭐⭐                                      ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Ưu điểm:**
+- 🖥️ Web Viewer - Xem installation qua browser
+- 🔧 Linh hoạt - Custom disk size, RAM
+- 📦 Isolated - Chạy trong container
+- 🎨 Latest - Windows Server 2025 mới nhất
+
+**Hạn chế:**
+- ⏱️ Boot lâu hơn - 10-15 phút
+- 🐌 Performance thấp hơn ~10-15%
+- 💻 RAM chỉ 8GB
+
+**Phù hợp cho:**
+- Testing & Development
+- Theo dõi installation progress
+- Learning Windows Server 2025
+
+</details>
+
+<details>
+<summary><b>3-7. Các phiên bản Windows khác</b></summary>
+
+**Windows Server 2022 (Docker):**
+- Production-ready, Stable
+- Wide compatibility
+- Security updates regular
+
+**Windows Server 2019 (Docker):**
+- LTS (Long Term Support)
+- Very stable and well-tested
+- Legacy app compatibility
+
+**Windows Server 2012 (Docker):**
+- End of support
+- Chỉ dùng cho compatibility testing
+- Lightweight
+
+**Windows 11 Professional (Docker):**
+- Modern UI
+- Latest Windows features
+- DirectStorage, Auto HDR
+
+**Windows 10 Professional (Docker):**
+- Classic UI
+- Most compatible
+- Lighter than Win 11
+
+</details>
+
+<details>
+<summary><b>8. Ubuntu 24.04 Desktop (Native) - 🐧 LINUX</b></summary>
+
+```yaml
+╔══════════════════════════════════════════════════════════╗
+║         UBUNTU 24.04 DESKTOP (NATIVE)                    ║
+╠══════════════════════════════════════════════════════════╣
+║  Runner      : ubuntu-latest                             ║
+║  Desktop     : XFCE4                                      ║
+║  RDP Server  : XRDP                                       ║
+║  CPU         : 4 vCPU                                     ║
+║  RAM         : 16GB                                       ║
+║  Storage     : ~120GB                                     ║
+║  Boot Time   : 5-7 minutes                                ║
+║  Performance : ⭐⭐⭐⭐⭐                                     ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Ưu điểm:**
+- 🖱️ Full Desktop - XFCE4 lightweight
+- ⚡ Cực nhanh - Linux native performance
+- 💪 16GB RAM - Development powerhouse
+- 🔧 Developer-friendly - Full package management
+
+**Phù hợp cho:**
+- Linux development
+- Web development (Node, Python, PHP)
+- DevOps practice
+- Docker & Kubernetes development
+
+</details>
 
 ---
 
-## 🌐 Kết nối RDP
+## 🔑 **THÔNG TIN ĐĂNG NHẬP**
 
-### Windows (Remote Desktop Connection)
-
-#### Cách 1: Sử dụng Remote Desktop Connection
-
-1. **Mở Remote Desktop Connection**
-   - Nhấn `Windows + R`
-   - Gõ `mstsc` và Enter
-   - Hoặc tìm "Remote Desktop Connection" trong Start Menu
-
-2. **Nhập thông tin**
-   ```
-   Computer: [IP từ workflow log]
-   Example: 123.45.67.89:3389
-   ```
-
-3. **Kết nối**
-   - Click "Connect"
-   - Nhập username: `Admin`
-   - Nhập password: `Window@123456`
-   - Click "OK"
-
-#### Cách 2: Sử dụng Command Line
-
-```cmd
-mstsc /v:123.45.67.89:3389 /admin
-```
-
-### macOS (Microsoft Remote Desktop)
-
-1. **Cài đặt ứng dụng**
-   - Download từ Mac App Store: "Microsoft Remote Desktop"
-   - Hoặc sử dụng: `brew install --cask microsoft-remote-desktop`
-
-2. **Thêm PC mới**
-   - Mở Microsoft Remote Desktop
-   - Click "+" → "Add PC"
-   - PC name: `[IP]:[Port]` (ví dụ: `123.45.67.89:3389`)
-   - User account: Add new
-     - Username: `Admin`
-     - Password: `Window@123456`
-
-3. **Kết nối**
-   - Double-click vào PC vừa thêm
-
-### Linux (Remmina / Rdesktop)
-
-#### Sử dụng Remmina (Giao diện đồ họa)
-
-```bash
-# Cài đặt Remmina
-sudo apt update
-sudo apt install remmina remmina-plugin-rdp
-
-# Chạy Remmina
-remmina
-```
-
-Trong Remmina:
-- Protocol: RDP
-- Server: `123.45.67.89:3389`
-- Username: `Admin`
-- Password: `Window@123456`
-
-#### Sử dụng Rdesktop (Command line)
-
-```bash
-# Cài đặt
-sudo apt install rdesktop
-
-# Kết nối
-rdesktop -u Admin -p Window@123456 123.45.67.89:3389 -g 1920x1080 -a 32
-```
-
-**Tham số:**
-- `-u`: Username
-- `-p`: Password
-- `-g`: Độ phân giải (width x height)
-- `-a`: Color depth (bits)
-
-#### Sử dụng FreeRDP (Nâng cao)
-
-```bash
-# Cài đặt
-sudo apt install freerdp2-x11
-
-# Kết nối
-xfreerdp /u:Admin /p:Window@123456 /v:123.45.67.89:3389 /size:1920x1080 /cert:ignore
-```
-
-### Mobile (iOS / Android)
-
-#### iOS (Microsoft Remote Desktop)
-
-1. Download "Microsoft Remote Desktop" từ App Store
-2. Tap "+" → "Add PC"
-3. Nhập thông tin:
-   - PC name: `[IP]:[Port]`
-   - User account: `Admin` / `Window@123456`
-4. Tap vào PC để kết nối
-
-#### Android (Microsoft Remote Desktop / RD Client)
-
-1. Download "Microsoft Remote Desktop" từ Google Play
-2. Tap "+" → "Desktop"
-3. Nhập thông tin:
-   - PC name: `[IP]:[Port]`
-   - User name: `Admin`
-   - Password: `Window@123456`
-4. Tap "Save" và kết nối
-
----
-
-## 📊 Giám sát tiến trình
-
-### 🖥️ Web Viewer (Chỉ Docker Windows)
-
-Web Viewer cho phép bạn xem trực tiếp màn hình cài đặt Windows qua trình duyệt.
-
-#### Cách sử dụng
-
-1. **Lấy URL Web Viewer**
-   - Từ workflow log, tìm dòng:
-   ```
-   🖥️  Web Viewer  : http://123.45.67.89:8006
-   ```
-
-2. **Truy cập qua trình duyệt**
-   ```
-   http://[IP]:8006
-   ```
-
-3. **Xem tiến trình**
-   - BIOS screen
-   - Windows boot logo
-   - Installation progress
-   - Setup screens
-
-#### Tính năng Web Viewer
-
-- 🎥 **Real-time screen**: Xem màn hình thời gian thực
-- ⌨️ **Keyboard input**: Gửi lệnh keyboard nếu cần
-- 🖱️ **Mouse control**: Điều khiển chuột từ xa
-- 📸 **Screenshot**: Chụp màn hình hiện tại
-
-#### Lợi ích
-
-- ✅ Kiểm tra Windows đã boot xong chưa
-- ✅ Debug các vấn đề khi cài đặt
-- ✅ Không cần đợi RDP ready
-- ✅ Xem được ngay từ lúc bắt đầu boot
-
-### 📋 Workflow Logs
-
-#### Xem logs trong GitHub Actions
-
-1. **Truy cập workflow run**
-   - Tab Actions → Click vào run đang chạy
-
-2. **Xem từng step**
-   - Click vào job (vd: `windows-docker`)
-   - Click vào step để xem chi tiết
-
-3. **Tìm thông tin kết nối**
-   - Tìm step "🌐 Connection Information"
-   - Copy IP, username, password
-
-#### Log format mẫu
+### 🪟 **Windows (Tất cả phiên bản)**
 
 ```
 ╔════════════════════════════════════════════════════════════╗
-║         ✅ WINDOWS SERVER 2025 - READY FOR CONNECTION      ║
+║              WINDOWS LOGIN CREDENTIALS                     ║
 ╠════════════════════════════════════════════════════════════╣
-║ 🌐  RDP IP      : 123.45.67.89:3389
-║ 🖥️  Web Viewer  : http://123.45.67.89:8006
-║ 👤  Username    : Admin
-║ 🔐  Password    : Window@123456
-║ 📍  RDP Port    : 3389
-║ 🌍  Web Port    : 8006 (Installation Progress)
-║ 💻  Resources   : 4 vCPU | 8GB RAM
+║  Username : Admin                                          ║
+║  Password : Window@123456                                  ║
+║  Type     : Administrator                                  ║
+║  Rights   : Full Control                                   ║
 ╚════════════════════════════════════════════════════════════╝
 
-💡 Tip: Access Web Viewer to see Windows installation progress!
+⚠️ LƯU Ý:
+• Password có @ (at symbol)
+• Phân biệt chữ hoa/thường
+• Chữ W viết HOA
+```
+
+### 🐧 **Ubuntu Desktop**
+
+```
+╔════════════════════════════════════════════════════════════╗
+║              UBUNTU LOGIN CREDENTIALS                      ║
+╠════════════════════════════════════════════════════════════╣
+║  Username : Admin                                          ║
+║  Password : Ubuntu@123456                                  ║
+║  Type     : Sudo User                                      ║
+║  Rights   : Root Access                                    ║
+╚════════════════════════════════════════════════════════════╝
+
+⚠️ LƯU Ý:
+• Password có @ (at symbol)
+• Case-sensitive trên Linux
+• Chữ U viết HOA
+```
+
+### 🔒 **Cảnh báo bảo mật**
+
+```
+⚠️⚠️⚠️ QUAN TRỌNG ⚠️⚠️⚠️
+
+• Đây là password MẶC ĐỊNH
+• KHÔNG dùng cho production
+• KHÔNG lưu dữ liệu nhạy cảm
+• ĐỔI password nếu cần bảo mật cao
+
+Cách đổi password:
+Windows: net user Admin <new_password>
+Ubuntu:  sudo passwd Admin
 ```
 
 ---
 
-## ⏱️ Thời gian sử dụng
+## 🌐 **KẾT NỐI RDP**
 
-### Timeline chi tiết
+### 🪟 **Windows - Remote Desktop**
 
-#### Windows Server 2025 (Native)
+<details>
+<summary><b>Phương pháp 1: GUI</b></summary>
 
+**Bước 1: Mở RDP**
 ```
-00:00 - Khởi tạo workflow
-00:01 - Tạo user Admin
-00:02 - Cấu hình RDP service
-00:03 - Setup Kami Tunnel
-00:04 - Lấy Public IP
-00:05 - Sẵn sàng kết nối ✅
-...
-05:40 - Workflow tự động dừng (timeout)
+Windows + R
+→ Gõ: mstsc
+→ Enter
 ```
 
-**Total runtime**: ~5 giờ 40 phút (340 phút)
-
-#### Windows Docker Versions
-
+**Bước 2: Nhập thông tin**
 ```
-00:00 - Khởi tạo workflow
-00:01 - Pull Docker image
-00:05 - Start Windows container
-00:10 - Windows booting
-00:15 - Windows setup
-00:20 - RDP ready ✅
-00:20 - Web Viewer available (port 8006)
-...
-05:40 - Workflow tự động dừng
+Computer: 123.45.67.89:3389
+Username: Admin
+Password: Window@123456
 ```
 
-**Total runtime**: ~5 giờ 20 phút (320 phút sử dụng thực tế)
-
-#### Ubuntu Desktop RDP
-
+**Bước 3: Connect**
 ```
-00:00 - Khởi tạo workflow
-00:02 - Cài đặt XFCE Desktop
-00:04 - Cài đặt XRDP
-00:05 - Tạo user Admin
-00:06 - Setup Kami Tunnel
-00:07 - Sẵn sàng kết nối ✅
-...
-05:40 - Workflow tự động dừng
+Click "Connect"
+→ Accept certificate warning
+→ Done!
 ```
 
-**Total runtime**: ~5 giờ 33 phút (333 phút sử dụng thực tế)
+</details>
 
-### Gia hạn thời gian
+<details>
+<summary><b>Phương pháp 2: Command Line</b></summary>
 
-Mặc định workflow chạy 6 giờ (360 phút). Để thay đổi:
+```cmd
+# Basic
+mstsc /v:123.45.67.89:3389
 
-```yaml
-jobs:
-  windows-server-2025-native:
-    timeout-minutes: 360  # Thay đổi số này (tối đa 360 cho free tier)
+# Admin mode
+mstsc /v:123.45.67.89:3389 /admin
+
+# Fullscreen
+mstsc /v:123.45.67.89:3389 /f
+
+# Custom resolution
+mstsc /v:123.45.67.89:3389 /w:1920 /h:1080
 ```
 
-> ⚠️ **Lưu ý**: GitHub Actions free tier giới hạn tối đa 6 giờ/workflow
+</details>
+
+### 🍎 **macOS - Microsoft Remote Desktop**
+
+<details>
+<summary><b>Cài đặt và sử dụng</b></summary>
+
+**Cài đặt:**
+```bash
+# Từ App Store
+Mac App Store → "Microsoft Remote Desktop"
+
+# Hoặc Homebrew
+brew install --cask microsoft-remote-desktop
+```
+
+**Sử dụng:**
+```
+1. Mở app
+2. Click "+" → Add PC
+3. PC name: 123.45.67.89:3389
+4. User account: Admin / Window@123456
+5. Double-click để connect
+```
+
+</details>
+
+### 🐧 **Linux - Remmina**
+
+<details>
+<summary><b>Cài đặt và sử dụng</b></summary>
+
+**Cài đặt:**
+```bash
+# Ubuntu/Debian
+sudo apt install remmina remmina-plugin-rdp
+
+# Fedora
+sudo dnf install remmina
+
+# Arch
+sudo pacman -S remmina freerdp
+```
+
+**Sử dụng:**
+```
+1. Chạy: remmina
+2. Click "+" → New connection
+3. Protocol: RDP
+4. Server: 123.45.67.89:3389
+5. Username: Admin
+6. Password: Window@123456
+7. Connect
+```
+
+</details>
 
 ---
 
-## 🔧 Khắc phục sự cố
+## 🖥️ **WEB VIEWER**
 
-### ❌ Các vấn đề thường gặp
+### 🌟 **Giới thiệu**
 
-#### 1. Không thể lấy được IP
-
-**Triệu chứng:**
 ```
-🔄 Đang kiểm tra tín hiệu từ Windows Server...
-(Lặp lại không có IP)
-```
-
-**Nguyên nhân:**
-- Kami Tunnel không khởi động thành công
-- Network bị chặn
-- Port 3389 bị block
-
-**Giải pháp:**
-
-```bash
-# Kiểm tra Kami Tunnel log
-cat kami_tunnel.txt
-
-# Thử khởi động lại tunnel
-./kami-tunnel 3389
+╔════════════════════════════════════════════════════════════╗
+║              🌐 WEB VIEWER - REAL-TIME MONITOR             ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  Web Viewer cho phép XEM MÀN HÌNH Windows qua BROWSER     ║
+║  mà KHÔNG CẦN RDP client!                                 ║
+║                                                            ║
+║  ✅ Xem installation progress real-time                   ║
+║  ✅ Không cần cài RDP client                              ║
+║  ✅ Hoạt động trên mọi thiết bị                           ║
+║  ✅ Port 8006 - HTTP access                               ║
+║                                                            ║
+║  ⚠️ CHỈ có trên Docker versions                           ║
+║  ⚠️ KHÔNG có trên Native versions                         ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
-**Workaround:**
-- Cancel workflow và chạy lại
-- Thử phiên bản khác (Native → Docker hoặc ngược lại)
+### 🚀 **Cách sử dụng**
 
-#### 2. RDP Connection Failed
-
-**Triệu chứng:**
+**Bước 1: Lấy URL**
 ```
-Remote Desktop can't connect to the remote computer
+Trong workflow log, tìm:
+🔗 Web Address: http://123.45.67.89:8006
 ```
 
-**Nguyên nhân:**
-- IP sai hoặc hết hạn
-- Port 3389 bị firewall chặn
-- Windows chưa khởi động xong
-
-**Giải pháp:**
-
-1. **Kiểm tra IP còn hoạt động:**
-   ```bash
-   ping [IP]
-   ```
-
-2. **Test kết nối port:**
-   ```bash
-   telnet [IP] 3389
-   # hoặc
-   nc -zv [IP] 3389
-   ```
-
-3. **Đợi thêm vài phút:**
-   - Docker Windows cần 10-15 phút để boot hoàn toàn
-   - Kiểm tra Web Viewer (port 8006) xem Windows đã boot xong chưa
-
-4. **Kiểm tra firewall local:**
-   ```cmd
-   # Windows
-   netsh advfirewall show allprofiles
-   
-   # Tạm tắt firewall (test only)
-   netsh advfirewall set allprofiles state off
-   ```
-
-#### 3. Authentication Failed
-
-**Triệu chững:**
+**Bước 2: Truy cập**
 ```
-Your credentials did not work
-Login attempt failed
+1. Mở browser
+2. Paste URL: http://123.45.67.89:8006
+3. Enter
 ```
 
-**Nguyên nhân:**
-- Username/password sai
-- User chưa được tạo
-- Network Level Authentication (NLA) enabled
-
-**Giải pháp:**
-
-1. **Kiểm tra thông tin đăng nhập:**
-   - Username: `Admin` (chữ A viết hoa)
-   - Password: `Window@123456` (cho Windows)
-   - Password: `Ubuntu@123456` (cho Ubuntu)
-
-2. **Tắt NLA (từ client):**
-   
-   **Windows:**
-   - Mở Remote Desktop Connection
-   - Show Options → Advanced
-   - Connect even if authentication fails
-
-   **Linux (FreeRDP):**
-   ```bash
-   xfreerdp /u:Admin /p:Window@123456 /v:[IP]:3389 /cert:ignore +auth-only
-   ```
-
-#### 4. Docker Container Failed
-
-**Triệu chứng:**
+**Bước 3: Xem màn hình**
 ```
-Error response from daemon: failed to create shim task
+Bạn sẽ thấy màn hình Windows real-time:
+• Boot process
+• Installation progress
+• Desktop khi ready
 ```
 
-**Nguyên nhân:**
-- `/dev/kvm` không khả dụng
-- Docker resources không đủ
-- Image pull failed
+### 📊 **So sánh Web Viewer vs RDP**
 
-**Giải pháp:**
-
-1. **Kiểm tra KVM:**
-   ```bash
-   ls -la /dev/kvm
-   sudo chmod 666 /dev/kvm  # Nếu cần
-   ```
-
-2. **Restart Docker:**
-   ```bash
-   sudo systemctl restart docker
-   docker system prune -a  # Dọn dẹp
-   ```
-
-3. **Pull image thủ công:**
-   ```bash
-   docker pull dockurr/windows:latest
-   ```
-
-#### 5. Workflow Timeout
-
-**Triệu chứng:**
-```
-The job running on runner has exceeded the maximum execution time of 360 minutes.
-```
-
-**Nguyên nhân:**
-- Workflow chạy quá 6 giờ
-- Step bị treo
-
-**Giải pháp:**
-
-1. **Cancel và chạy lại**
-2. **Giảm timeout nếu chỉ test:**
-   ```yaml
-   timeout-minutes: 60  # 1 giờ
-   ```
-
-#### 6. Web Viewer không truy cập được
-
-**Triệu chứng:**
-```
-ERR_CONNECTION_REFUSED khi truy cập http://[IP]:8006
-```
-
-**Nguyên nhân:**
-- Port 8006 chưa được expose
-- Kami Tunnel cho port 8006 chưa chạy
-- Docker container chưa publish port
-
-**Giải pháp:**
-
-1. **Kiểm tra Docker ports:**
-   ```bash
-   docker ps
-   # Kiểm tra xem có port 8006 không
-   ```
-
-2. **Kiểm tra Kami Tunnel:**
-   ```bash
-   cat kami_tunnel_web.txt
-   ps aux | grep kami-tunnel
-   ```
-
-3. **Restart tunnel:**
-   ```bash
-   pkill kami-tunnel
-   ./kami-tunnel 8006 > kami_tunnel_web.txt 2>&1 &
-   ```
-
-### 🔍 Debug logs
-
-#### Xem Docker logs
-
-```bash
-# Xem logs container
-docker logs windows_rdp
-
-# Follow logs realtime
-docker logs -f windows_rdp
-
-# Xem 100 dòng cuối
-docker logs --tail 100 windows_rdp
-```
-
-#### Xem Kami Tunnel logs
-
-```bash
-# RDP tunnel
-cat kami_tunnel.txt
-cat kami_tunnel_rdp.txt
-
-# Web viewer tunnel
-cat kami_tunnel_web.txt
-```
-
-#### Kiểm tra network
-
-```bash
-# List ports đang listen
-netstat -tuln | grep -E '3389|8006'
-
-# Kiểm tra routing
-ip route
-
-# Test connection
-curl -v telnet://[IP]:3389
-curl -v http://[IP]:8006
-```
+| Tiêu chí | Web Viewer | RDP |
+|----------|------------|-----|
+| Cài đặt | Không cần | Cần client |
+| Performance | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| Xem Boot | ✅ YES | ❌ NO |
+| Production | ❌ NO | ✅ YES |
+| Clipboard | ❌ NO | ✅ YES |
+| File transfer | ❌ NO | ✅ YES |
 
 ---
 
-## ❓ FAQ
+## 🔧 **KHẮC PHỤC SỰ CỐ**
 
-### Câu hỏi thường gặp
+### 🐛 **Common Issues**
 
-#### 1. Có mất phí không?
+<details>
+<summary><b>1. Workflow stuck ở "Queued"</b></summary>
 
-**Trả lời:** GitHub Actions free tier cung cấp:
-- **2,000 phút/tháng** cho tài khoản Free
-- **3,000 phút/tháng** cho tài khoản Pro
+**Nguyên nhân:**
+- Hết quota GitHub Actions
+- Runners đang bận
+- Actions bị disable
 
-Mỗi lần chạy tốn ~6 giờ = 360 phút. Vậy bạn có thể chạy:
-- Free: ~5-6 lần/tháng
-- Pro: ~8-9 lần/tháng
+**Giải pháp:**
+```bash
+# Check quota
+Settings → Billing → Actions
 
-> 💰 **Totally FREE** nếu sử dụng trong giới hạn!
+# Enable Actions
+Settings → Actions → Allow all actions
 
-#### 2. Có thể chạy 24/7 không?
-
-**Trả lời:** Không. GitHub Actions có giới hạn:
-- Tối đa 6 giờ/workflow
-- Sau 6 giờ sẽ tự động timeout
-
-**Workaround:**
-- Chạy lại workflow sau khi timeout
-- Sử dụng nhiều repository khác nhau
-- Nâng cấp lên GitHub Team/Enterprise
-
-#### 3. IP có thay đổi mỗi lần chạy không?
-
-**Trả lời:** Có. Mỗi lần chạy workflow sẽ có:
-- IP mới từ Kami Tunnel
-- Machine mới từ GitHub Runners
-- Tất cả dữ liệu sẽ bị xóa sau khi kết thúc
-
-**Lưu trữ dữ liệu:**
-- Sử dụng GitHub Artifacts để lưu files
-- Upload lên cloud storage (Google Drive, Dropbox)
-- Commit và push về repository
-
-#### 4. Có thể cài đặt phần mềm không?
-
-**Trả lời:** Có, bạn có full quyền Administrator:
-- Cài đặt bất kỳ phần mềm nào
-- Thay đổi cấu hình hệ thống
-- Chạy scripts, applications
-
-**Lưu ý:**
-- Dữ liệu sẽ mất sau khi workflow kết thúc
-- Không lưu trữ dữ liệu nhạy cảm
-
-#### 5. Có thể truy cập Internet không?
-
-**Trả lời:** 
-
-**Windows Native:** ✅ Có, full internet access
-**Windows Docker:** ⚠️ Có giới hạn:
-- HTTP/HTTPS: ✅ Hoạt động
-- Browsing: ✅ Hoạt động  
-- Download: ✅ Hoạt động
-- Một số ports có thể bị chặn
-
-**Ubuntu Desktop:** ✅ Full internet access
-
-#### 6. Có an toàn không?
-
-**Trả lời:** 
-
-**Bảo mật:**
-- ✅ Chạy trên GitHub infrastructure
-- ✅ Isolated environment
-- ✅ Data tự động xóa sau khi chạy
-- ⚠️ Không sử dụng cho production data
-- ⚠️ Không lưu mật khẩu/keys nhạy cảm
-
-**Best Practices:**
-- Đổi password mặc định nếu cần
-- Không commit sensitive data
-- Sử dụng GitHub Secrets cho credentials
-- Review logs trước khi public repository
-
-#### 7. Có thể chơi game không?
-
-**Trả lời:** 
-
-**Windows Native:** 
-- ❌ Không có GPU
-- ❌ Graphics performance thấp
-- ✅ Có thể chơi game nhẹ, cũ
-
-**Windows Docker:**
-- ❌ Không hỗ trợ GPU passthrough
-- ❌ Không phù hợp cho gaming
-
-**Khuyến nghị:**
-- Chỉ dùng cho công việc, testing, development
-- Không dùng cho gaming hay đồ họa nặng
-
-#### 8. Có giới hạn băng thông không?
-
-**Trả lời:** 
-
-GitHub Actions có giới hạn:
-- Network I/O trong limits hợp lý
-- Không giới hạn cụ thể về bandwidth
-- Có thể download/upload files bình thường
-
-**Lưu ý:**
-- Không abuse network
-- Không dùng cho torrenting, mining
-- Không dùng cho hosting services
-
-#### 9. Có thể dùng cho mining không?
-
-**Trả lời:** ❌ **TUYỆT ĐỐI KHÔNG**
-
-Theo GitHub Terms of Service:
-- ❌ Mining cryptocurrency là vi phạm
-- ❌ Tài khoản sẽ bị ban vĩnh viễn
-- ❌ Mất tất cả repositories
-
-**Cho phép:**
-- ✅ Development và testing
-- ✅ CI/CD pipelines
-- ✅ Automated testing
-- ✅ Learning và education
-
-#### 10. Làm sao để kéo dài thời gian?
-
-**Trả lời:** 
-
-Không thể vượt quá 6 giờ, nhưng có thể:
-
-**Method 1: Auto re-run**
-```yaml
-# Sử dụng cron schedule
-on:
-  schedule:
-    - cron: '0 */6 * * *'  # Chạy mỗi 6 giờ
+# Retry
+Cancel workflow → Run lại
 ```
 
-**Method 2: Multiple repos**
-- Tạo nhiều repos khác nhau
-- Chạy luân phiên
+</details>
 
-**Method 3: Manual restart**
-- Sau 6 giờ, manually chạy lại
+<details>
+<summary><b>2. Không lấy được IP</b></summary>
 
-> ⚠️ Nhưng nhớ: Dữ liệu sẽ mất mỗi lần restart!
+**Nguyên nhân:**
+- Tunnel chưa start
+- Network issue
+- File kami_tunnel.txt không tồn tại
+
+**Giải pháp:**
+```
+1. Kiểm tra workflow logs
+2. Đợi thêm 2-3 phút
+3. Check tunnel process đang chạy
+4. Run lại workflow nếu cần
+```
+
+</details>
+
+<details>
+<summary><b>3. RDP connection refused</b></summary>
+
+**Nguyên nhân:**
+- Sai IP:Port
+- RDP service chưa start
+- Firewall blocking
+
+**Giải pháp:**
+```
+1. Kiểm tra format IP:3389
+2. Đợi thêm vài phút
+3. Check firewall trên máy bạn
+4. Thử từ network khác
+```
+
+</details>
+
+<details>
+<summary><b>4. Web Viewer không load</b></summary>
+
+**Nguyên nhân:**
+- Docker chưa start xong
+- Port 8006 chưa ready
+
+**Giải pháp:**
+```
+1. Đợi thêm 5-10 phút
+2. F5 refresh browser
+3. Clear cache
+4. Check URL: http:// (không https://)
+```
+
+</details>
+
+<details>
+<summary><b>5. Credential không đúng</b></summary>
+
+**Nguyên nhân:**
+- Sai username/password
+- Case sensitivity
+
+**Giải pháp:**
+```
+Windows:
+Username: Admin (chữ A viết HOA)
+Password: Window@123456 (chữ W HOA, có @)
+
+Ubuntu:
+Username: Admin (chữ A viết HOA)
+Password: Ubuntu@123456 (chữ U HOA, có @)
+
+Lưu ý: Password có ký tự @ và phân biệt hoa thường!
+```
+
+</details>
 
 ---
 
-## 📝 Lưu ý quan trọng
+## ❓ **FAQ**
 
-### ⚠️ Cảnh báo
+<details>
+<summary><b>Q: Có mất phí không?</b></summary>
 
-#### 1. Giới hạn sử dụng
-
+**A:** HOÀN TOÀN MIỄN PHÍ!
 ```
-❌ KHÔNG SỬ DỤNG CHO:
-- Cryptocurrency mining
-- Torrenting / P2P file sharing
-- Hosting production websites
-- DDoS attacks
-- Spam / phishing
-- Illegal activities
-
-✅ SỬ DỤNG CHO:
-- Software development & testing
-- Learning & education
-- CI/CD pipelines
-- Temporary workspaces
-- Demo & proof of concepts
+Free Account: 2,000 phút/tháng
+Pro Account: 3,000 phút/tháng
+Mỗi run: Tối đa 6 giờ (360 phút)
 ```
 
-#### 2. Dữ liệu
+</details>
 
-- 🗑️ **Mọi dữ liệu sẽ bị XÓA** sau khi workflow kết thúc
-- 💾 Không lưu trữ dữ liệu quan trọng
-- ☁️ Upload lên cloud nếu cần lưu
+<details>
+<summary><b>Q: Có thể chạy 24/7 không?</b></summary>
 
-#### 3. Bảo mật
-
-- 🔐 Đổi password mặc định trong môi trường thực
-- 🔒 Không commit sensitive data vào repo
-- 🛡️ Sử dụng GitHub Secrets cho credentials
-- 👀 Review logs trước khi public repo
-
-#### 4. Performance
-
-- ⚡ Windows Native nhanh hơn Docker
-- 🐌 Docker cần 10-15 phút để boot
-- 🖥️ Không có GPU - không phù hợp đồ họa nặng
-- 💻 4 vCPU + 8-16GB RAM - phù hợp công việc văn phòng
-
-#### 5. Network
-
-- 🌐 Internet access available
-- 🔌 Một số ports có thể bị restrict
-- 📶 Bandwidth trong giới hạn hợp lý
-- 🚫 Không abuse network resources
-
-### 📌 Best Practices
-
-#### 1. Tối ưu hóa thời gian
-
-```yaml
-# Giảm timeout cho testing
-timeout-minutes: 60  # 1 giờ thay vì 6 giờ
-
-# Sử dụng cache
-- uses: actions/cache@v3
-  with:
-    path: ~/cache
-    key: ${{ runner.os }}-cache
+**A:** KHÔNG. Giới hạn 6 giờ/run.
+```
+Sau 6 giờ:
+• Workflow tự động stop
+• Mọi dữ liệu bị xóa
+• Phải run lại manually
 ```
 
-#### 2. Backup dữ liệu
+</details>
 
-```yaml
-# Upload files trước khi kết thúc
-- name: Upload workspace
-  uses: actions/upload-artifact@v3
-  with:
-    name: workspace-backup
-    path: |
-      ~/**
-      !~/.cache
+<details>
+<summary><b>Q: Có GPU không?</b></summary>
+
+**A:** KHÔNG có GPU.
+```
+❌ Không chạy được:
+• Games
+• Video editing (GPU-accelerated)
+• AI/ML training
+• 3D rendering
+
+✅ Có thể chạy:
+• Programming
+• Web browsing
+• Office work
 ```
 
-#### 3. Monitoring
+</details>
 
-```yaml
-# Gửi thông báo khi hoàn thành
-- name: Send notification
-  if: always()
-  uses: actions/github-script@v6
-  with:
-    script: |
-      github.rest.issues.createComment({
-        issue_number: context.issue.number,
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        body: '✅ Workflow completed!'
-      })
+<details>
+<summary><b>Q: Có thể cài software không?</b></summary>
+
+**A:** CÓ, full admin rights!
+```
+Windows: Download .exe/.msi và install
+Ubuntu: sudo apt install <package>
+
+⚠️ Lưu ý: Mọi cài đặt mất sau 6 giờ!
 ```
 
-#### 4. Cost optimization
+</details>
 
-```yaml
-# Chỉ chạy khi có tag
-on:
-  push:
-    tags:
-      - 'v*'
+<details>
+<summary><b>Q: Dữ liệu có được lưu không?</b></summary>
 
-# Hoặc manual dispatch only
-on:
-  workflow_dispatch:
+**A:** KHÔNG! Mọi dữ liệu bị XÓA sau 6h.
+```
+PHẢI backup trước khi kết thúc:
+• Upload lên cloud
+• Push code lên GitHub
+• Download files quan trọng
 ```
 
-### 🎯 Use Cases
-
-#### ✅ Phù hợp cho
-
-- 🧪 **Testing & QA**
-  - Test ứng dụng Windows
-  - Browser testing
-  - Compatibility testing
-
-- 💻 **Development**
-  - Remote development environment
-  - Build Windows applications
-  - Package testing
-
-- 📚 **Learning & Training**
-  - Windows Server administration
-  - RDP tutorials
-  - PowerShell scripting
-
-- 🔬 **Research & POC**
-  - Proof of concepts
-  - Security research (ethical)
-  - Performance benchmarking
-
-#### ❌ Không phù hợp cho
-
-- 🎮 **Gaming** - Không có GPU
-- ⛏️ **Mining** - Bị cấm và ban account
-- 🌐 **Production hosting** - Không stable
-- 💾 **Long-term storage** - Dữ liệu bị xóa
-- 📹 **Media encoding** - Performance thấp
+</details>
 
 ---
 
-## 🤝 Đóng góp
+## 📞 **HỖ TRỢ**
 
-### Cách đóng góp
+### 💬 **Kênh hỗ trợ chính thức**
 
-Chúng tôi hoan nghênh mọi đóng góp! 
-
-#### 1. Fork repository
-
-```bash
-# Fork qua GitHub UI hoặc
-gh repo fork zun209384-lgtm/window
+```
+╔════════════════════════════════════════════════════════════╗
+║              📞 OFFICIAL SUPPORT CHANNELS                  ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  🐛 GitHub Issues (RECOMMENDED)                           ║
+║     https://github.com/zun209384-lgtm/window/issues       ║
+║                                                            ║
+║  💬 GitHub Discussions                                     ║
+║     https://github.com/zun209384-lgtm/window/discussions  ║
+║                                                            ║
+║  📧 Email                                                  ║
+║     (Available in repository description)                  ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
-#### 2. Tạo branch mới
+### 📋 **Khi tạo Issue**
 
-```bash
-git checkout -b feature/your-feature-name
+**Bao gồm:**
+```markdown
+1. OS version đã chọn
+2. Workflow run URL
+3. Full error logs
+4. Screenshots
+5. Steps to reproduce
+6. Expected vs actual behavior
 ```
-
-#### 3. Commit changes
-
-```bash
-git add .
-git commit -m "Add: your feature description"
-```
-
-#### 4. Push và tạo Pull Request
-
-```bash
-git push origin feature/your-feature-name
-# Tạo PR trên GitHub
-```
-
-### Coding Standards
-
-- ✅ Sử dụng YAML format chuẩn
-- ✅ Comment rõ ràng cho code phức tạp
-- ✅ Test trước khi submit PR
-- ✅ Update documentation nếu cần
-
-### Ideas for contribution
-
-- 🎨 Cải thiện UI/UX của logs
-- ⚡ Tối ưu thời gian boot
-- 🔧 Thêm configuration options
-- 📝 Cải thiện documentation
-- 🐛 Fix bugs
-- 🆕 Thêm OS versions mới
-
----
-
-## 📞 Hỗ trợ
-
-### 💬 Kênh hỗ trợ
-
-#### GitHub Issues (Khuyến nghị)
-
-Tạo issue mới tại: https://github.com/zun209384-lgtm/window/issues
 
 **Template:**
 ```markdown
 **Describe the issue**
-Mô tả chi tiết vấn đề
+Mô tả chi tiết
 
 **To Reproduce**
-Các bước để reproduce:
 1. Go to '...'
 2. Click on '...'
 3. See error
@@ -1146,156 +1171,146 @@ Các bước để reproduce:
 Hành vi mong đợi
 
 **Screenshots**
-Nếu có, attach screenshots
+Attach screenshots
 
 **Environment:**
-- OS Version: [e.g. Windows Server 2025]
-- Runner: [e.g. windows-latest]
-- Browser: [e.g. Chrome 120]
+- OS: Windows Server 2025
+- Runner: windows-latest
 
-**Additional context**
-Thông tin thêm
+**Logs**
 ```
-
-#### Discussions
-
-Tham gia thảo luận: https://github.com/zun209384-lgtm/window/discussions
-
-- 💡 Ý tưởng mới
-- ❓ Q&A
-- 📢 Announcements
-
-### 🐛 Báo cáo lỗi
-
-Khi báo cáo lỗi, hãy bao gồm:
-
-1. **Workflow run URL**
-   ```
-   https://github.com/[user]/[repo]/actions/runs/[run_id]
-   ```
-
-2. **Logs liên quan**
-   - Copy relevant logs từ workflow
-   - Include error messages
-
-3. **Steps to reproduce**
-   - OS version đã chọn
-   - Các bước đã thực hiện
-   - Kết quả mong đợi vs thực tế
-
-4. **Environment**
-   - GitHub account type (Free/Pro)
-   - Repository visibility (Public/Private)
-   - Region (nếu biết)
-
-### 📧 Contact
-
-- **Creator**: Zun
-- **Repository**: https://github.com/zun209384-lgtm/window
-- **Issues**: https://github.com/zun209384-lgtm/window/issues
+paste logs here
+```
+```
 
 ---
 
-## 📄 License
+## 🙏 **CREDITS**
 
 ```
-MIT License
-
-Copyright (c) 2024 Zun
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+╔════════════════════════════════════════════════════════════╗
+║                      👏 CREDITS                            ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  👤 ORIGINAL AUTHOR                                        ║
+║     • Zun209384-lgtm                                       ║
+║     • GitHub: https://github.com/zun209384-lgtm           ║
+║     • Repository: https://github.com/zun209384-lgtm/window║
+║                                                            ║
+║  📅 VERSION                                                ║
+║     • Version: 2.0                                         ║
+║     • Release: January 2026                                ║
+║     • Status: Production Ready                             ║
+║                                                            ║
+║  🛠️ TOOLS & SERVICES                                       ║
+║     • GitHub Actions - CI/CD Platform                      ║
+║     • Kami Tunnel - Public IP Tunneling                    ║
+║     • Dockurr/Windows - Windows Docker Images              ║
+║     • Microsoft - Windows & RDP Protocol                   ║
+║     • Canonical - Ubuntu Linux                             ║
+║                                                            ║
+║  📜 COPYRIGHT                                              ║
+║     • © 2024-2026 Zun209384-lgtm                          ║
+║     • All Rights Reserved                                  ║
+║     • Protected by DMCA                                    ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
-### Giải thích License
+### ⚖️ **Compliance Statement**
 
-**Bạn được phép:**
-- ✅ Sử dụng thương mại
-- ✅ Sửa đổi
-- ✅ Phân phối
-- ✅ Sử dụng riêng tư
+```
+This project complies with:
+✅ GitHub Terms of Service
+✅ GitHub Actions Usage Limits
+✅ DMCA Guidelines
+✅ International Copyright Laws
+✅ Open Source Best Practices
 
-**Điều kiện:**
-- 📄 Phải giữ license và copyright notice
-- 📝 Changes phải được document
-
-**Giới hạn:**
-- ⚠️ Không có warranty
-- ⚠️ Tác giả không chịu trách nhiệm
+All trademarks, logos, and brand names are the property
+of their respective owners.
+```
 
 ---
 
-## 🙏 Credits
+## 📜 **LEGAL DISCLAIMER**
 
-### Công cụ và dịch vụ
-
-- **GitHub Actions** - CI/CD platform
-- **Kami Tunnel** - Public IP tunneling
-- **Dockurr/Windows** - Windows Docker images
-- **Microsoft** - Windows và RDP protocol
-- **Canonical** - Ubuntu Linux
-
-### Cảm ơn
-
-Cảm ơn tất cả contributors và users đã support project! 🎉
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║                         ⚖️ LEGAL DISCLAIMER                            ║
+╠════════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  This software is provided "AS IS" without warranty of any kind,       ║
+║  either expressed or implied, including but not limited to the         ║
+║  implied warranties of merchantability and fitness for a particular    ║
+║  purpose.                                                              ║
+║                                                                        ║
+║  The author(s) shall not be liable for any damages, including but      ║
+║  not limited to direct, indirect, incidental, special, exemplary,      ║
+║  or consequential damages arising out of the use or inability to       ║
+║  use this software.                                                    ║
+║                                                                        ║
+║  Users are solely responsible for:                                     ║
+║  • Compliance with GitHub Terms of Service                            ║
+║  • Legal use of GitHub Actions resources                              ║
+║  • Protection of their own data and credentials                       ║
+║  • Ensuring their activities comply with local laws                   ║
+║                                                                        ║
+║  This software must not be used for:                                   ║
+║  • Illegal activities of any kind                                     ║
+║  • Mining cryptocurrencies                                            ║
+║  • DDoS attacks or network abuse                                      ║
+║  • Spam or phishing operations                                        ║
+║  • Any activity violating GitHub ToS                                  ║
+║                                                                        ║
+║  By using this software, you agree to these terms and take            ║
+║  full responsibility for your actions.                                 ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+```
 
 ---
 
-## 📊 Stats
+<div align="center">
+
+## ⭐ **STAR THIS REPOSITORY** ⭐
+
+**Nếu project này hữu ích, hãy cho 1 Star! 🌟**
+
+---
+
+### 📊 **Repository Statistics**
 
 ![GitHub stars](https://img.shields.io/github/stars/zun209384-lgtm/window?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/zun209384-lgtm/window?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/zun209384-lgtm/window?style=social)
+
 ![GitHub issues](https://img.shields.io/github/issues/zun209384-lgtm/window)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/zun209384-lgtm/window)
 ![GitHub last commit](https://img.shields.io/github/last-commit/zun209384-lgtm/window)
 
 ---
 
-## 🗺️ Roadmap
+### 📄 **License & Copyright**
 
-### Coming Soon
+```
+MIT License
 
-- [ ] 🔐 Mã hóa kết nối nâng cao
-- [ ] 📱 Mobile app support
-- [ ] 🌍 Multi-region deployment
-- [ ] 💾 Cloud storage integration
-- [ ] 🤖 Auto-restart on timeout
-- [ ] 📊 Usage dashboard
-- [ ] 🎨 Custom themes
-- [ ] 🔔 Notification system
+Copyright (c) 2024-2026 Zun209384-lgtm
 
-### Under Consideration
-
-- [ ] macOS support
-- [ ] GPU passthrough (nếu GitHub hỗ trợ)
-- [ ] Custom ISO support
-- [ ] Snapshot/backup features
-- [ ] Load balancing
-- [ ] Team collaboration features
+All rights reserved. Unauthorized copying, modification,
+distribution, or use of this software is strictly prohibited
+without explicit written permission from the copyright holder.
+```
 
 ---
 
-<div align="center">
+Made with ❤️ by [Zun209384-lgtm](https://github.com/zun209384-lgtm)
 
-**⭐ Star this repository nếu bạn thấy hữu ích! ⭐**
-
-Made with ❤️ by [Zun](https://github.com/zun209384-lgtm)
+**Version 2.0 - January 2026**
 
 [⬆ Về đầu trang](#️-remote-desktop-services---github-actions-workflow)
+
+---
 
 </div>
