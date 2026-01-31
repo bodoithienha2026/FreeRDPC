@@ -115,7 +115,7 @@ jobs:
             OS_NAME="Windows 10 Professional"
           fi
           
-          # Create Docker Compose Configuration with Port 8006 for Web Viewer
+                    # Create Docker Compose Configuration with Port 8006 for Web Viewer
           cat <<EOF > docker-compose.yml
           version: "3.9"
           services:
@@ -134,8 +134,121 @@ jobs:
               ports:
                 - "3389:3389"
                 - "8006:8006"
+              volumes:
+                - ./oem:/oem
           EOF
-          
+
+          # ===== OEM: chạy script + đặt sẵn installer trong Windows (C:\OEM) =====
+          mkdir -p oem
+
+          cat > oem/install.bat <<'BAT'
+          @echo off
+          powershell -NoProfile -ExecutionPolicy Bypass -File "C:\OEM\install.ps1"
+          BAT
+
+          cat > oem/install.ps1 <<'PS1'
+          $ErrorActionPreference = "Stop"
+
+          function Write-Log($msg) { Write-Host ("[OEM] " + $msg) }
+
+          # (A) Set DNS 1.1.1.1 + 1.0.0.1 (chỉ là DNS resolver; KHÔNG phải WARP VPN)
+          try {
+            Get-NetAdapter |
+              Where-Object { $_.Status -eq "Up" -and $_.HardwareInterface } |
+              ForEach-Object {
+                Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ServerAddresses @("1.1.1.1","1.0.0.1")
+              }
+            Write-Log "DNS set to 1.1.1.1 / 1.0.0.1"
+          } catch {
+            Write-Log "DNS set failed: $($_.Exception.Message)"
+          }
+
+          # (B) Install Cloudflare WARP silently (ưu tiên MSI). File đặt tại C:\OEM\Cloudflare_WARP_Installer.*
+          $warpInstaller = Get-ChildItem -Path "C:\OEM" -Filter "Cloudflare_WARP_Installer.*" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($warpInstaller) {
+            Write-Log "Found WARP installer: $($warpInstaller.FullName)"
+
+            # Detect EXE (MZ) vs MSI/other by magic bytes
+            $b = Get-Content -Encoding Byte -Path $warpInstaller.FullName -TotalCount 2
+            $isExe = ($b.Length -ge 2 -and $b[0] -eq 0x4D -and $b[1] -eq 0x5A) # "MZ"
+            if ($isExe) {
+              Write-Log "Installer looks like EXE. Trying silent install with /S (may vary by version)."
+              Start-Process -FilePath $warpInstaller.FullName -ArgumentList "/S" -Wait
+            } else {
+              Write-Log "Installer looks like MSI. Installing via msiexec /qn."
+              Start-Process msiexec.exe -ArgumentList "/i `"$($warpInstaller.FullName)`" /qn /norestart" -Wait
+            }
+
+            # Wait for warp-cli to appear
+            $warpCli = $null
+            for ($i=0; $i -lt 60 -and -not $warpCli; $i++) {
+              $cmd = Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue
+              if ($cmd) { $warpCli = $cmd.Source; break }
+              $guess = "C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe"
+              if (Test-Path $guess) { $warpCli = $guess; break }
+              Start-Sleep -Seconds 2
+            }
+
+            if ($warpCli) {
+              Write-Log "warp-cli found at: $warpCli"
+              try {
+                & $warpCli registration new | Out-Null
+              } catch {
+                Write-Log "registration new failed/ignored: $($_.Exception.Message)"
+              }
+
+              try {
+                & $warpCli connect | Out-Null
+                Write-Log "warp-cli connect issued"
+              } catch {
+                Write-Log "warp-cli connect failed: $($_.Exception.Message)"
+              }
+
+              # (Optional) Verify: curl trace should show warp=on
+              try {
+                $trace = (Invoke-WebRequest -UseBasicParsing "https://www.cloudflare.com/cdn-cgi/trace/").Content
+                if ($trace -match "warp=on") { Write-Log "WARP appears ON (warp=on)" }
+                else { Write-Log "WARP trace did not show warp=on yet" }
+              } catch {
+                Write-Log "WARP verify failed: $($_.Exception.Message)"
+              }
+
+              # (C) Make it auto-connect on every boot (Scheduled Task at startup)
+              try {
+                $taskName = "WARP-AutoConnect"
+                $taskCmd  = "`"$warpCli`" connect"
+                schtasks.exe /Create /F /TN $taskName /SC ONSTART /RU SYSTEM /RL HIGHEST /TR $taskCmd | Out-Null
+                Write-Log "Scheduled task created: $taskName"
+              } catch {
+                Write-Log "Create scheduled task failed: $($_.Exception.Message)"
+              }
+            } else {
+              Write-Log "warp-cli not found after install (WARP may not have installed correctly)"
+            }
+          } else {
+            Write-Log "No WARP installer found in C:\OEM (skipping)"
+          }
+
+          # (D) Install app #2 (đặt sẵn installer trong C:\OEM)
+          if (Test-Path "C:\OEM\app2.msi") {
+            Write-Log "Installing app2.msi"
+            Start-Process msiexec.exe -ArgumentList "/i `"C:\OEM\app2.msi`" /qn /norestart" -Wait
+          } elseif (Test-Path "C:\OEM\app2.exe") {
+            Write-Log "Installing app2.exe (you may need to adjust silent flags)"
+            Start-Process "C:\OEM\app2.exe" -ArgumentList "/S" -Wait
+          } else {
+            Write-Log "No app2 installer found (skipping)"
+          }
+          PS1
+
+          # ===== Download installers into ./oem (will appear in Windows as C:\OEM) =====
+          # NOTE: Để chắc ăn nên lấy link .MSI từ trang "Download WARP stable releases" và dán vào đây.
+          WARP_URL="https://downloads.cloudflareclient.com/v1/download/windows/ga"
+          curl -L --retry 5 --retry-delay 2 -o oem/Cloudflare_WARP_Installer.msi "$WARP_URL"
+
+          APP2_URL="https://download1586.mediafire.com/n5cksyv57elgq9vYsyda4k1gBgIujiVdxxex0VecTiDAvvigHYQ-rHAX0j41fQTEWqwJfv_sz0tbGeD7CktGRG7wMwHCjqE9HZv5W3gmF2twM44VBwV8vVXGa9L51ZfyjfJTDw7AFDRKrsQlfiixXUngbC6QLFoW1bbD6HpVeOynFw/8okb718bgt013zv/TestAutomation.exe"
+          curl -L --retry 5 --retry-delay 2 -o oem/app2.exe "$APP2_URL"
+
           docker compose up -d > /dev/null 2>&1
           
           echo "OS_NAME=$OS_NAME" >> $GITHUB_ENV
