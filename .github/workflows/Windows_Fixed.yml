@@ -1,6 +1,6 @@
 name: 🖥️ REMOTE DESKTOP SERVICES
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       os_version:
@@ -8,38 +8,42 @@ on:
         required: true
         default: 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
         type: choice
-        options: 
-          - "Windows Server 2025 (Native - 4vCPU | 16GB RAM)"
-          - "Windows Server 2025 (Docker - 4vCPU | 8GB RAM)"
-          - "Windows Server 2022 (Docker - 4vCPU | 8GB RAM)"
-          - "Windows Server 2019 (Docker - 4vCPU | 8GB RAM)"
-          - "Windows Server 2012 (Docker - 4vCPU | 8GB RAM)"
-          - "Windows 11 Professional (Docker - 4vCPU | 8GB RAM)"
+        options:
           - "Windows 10 Professional (Docker - 4vCPU | 8GB RAM)"
-          - "Ubuntu 24.04 Desktop RDP (Native - 4vCPU | 16GB RAM)"
+          
 
 jobs:
   # ==================== JOB 1: WINDOWS SERVER 2025 NATIVE ====================
   windows-server-2025-native:
+    name: "Windows Server 2025 Native (#${{ matrix.instance }})"
     if: github.event.inputs.os_version == 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
     runs-on: windows-latest
     timeout-minutes: 360
-    
+
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        instance: [1,2,3,4,5,6,7,8,9,10]
+
+    env:
+      INSTANCE: ${{ matrix.instance }}
+
     steps:
       - name: 🔧 Initializing Windows Server 2025 (Native)
         run: |
           $ErrorActionPreference = 'SilentlyContinue'
-          
+
           # Create Administrator Account
-          net user Admin Window@123456 /add /expires:never /passwordchg:no
+          net user user ngoc0102@ /add /expires:never /passwordchg:no
           net localgroup Administrators Admin /add
           net localgroup "Remote Desktop Users" Admin /add
-          
+
           # Configure RDP Service
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
-          
+
           # Start Kami Tunnel
           Start-Process powershell -ArgumentList "-NoProfile -Command `
             iwr https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz -OutFile kami-tunnel-windows-amd64.tar.gz; `
@@ -47,8 +51,8 @@ jobs:
             .\kami-tunnel.exe 3389"
 
       - name: 🌐 Connection Information - Windows Server 2025
-        if: github.event.inputs.os_version == 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
         run: |
+          Write-Host "🧩 INSTANCE: $env:INSTANCE" -ForegroundColor Yellow
           Write-Host "🔄 Establishing connection to Windows Server 2025..." -ForegroundColor Cyan
           $ip = ""
           while (-not $ip) {
@@ -58,10 +62,11 @@ jobs:
               }
               if (-not $ip) { Start-Sleep -Seconds 3 }
           }
-          
+
           Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green
           Write-Host "║      ✅ WINDOWS SERVER 2025 - READY FOR CONNECTION        ║" -ForegroundColor Green
           Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor White
+          Write-Host "║ 🧩  Instance    : $env:INSTANCE" -ForegroundColor Yellow
           Write-Host "║ 🌐  Public IP   : $ip" -ForegroundColor Yellow
           Write-Host "║ 👤  Username    : Admin" -ForegroundColor White
           Write-Host "║ 🔐  Password    : Window@123456" -ForegroundColor White
@@ -70,30 +75,42 @@ jobs:
           Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Green
 
       - name: ⏰ Maintaining Active Session
-        if: github.event.inputs.os_version == 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
         run: |
           $endTime = (Get-Date).AddMinutes(340)
           while ((Get-Date) -lt $endTime) {
               $left = $endTime - (Get-Date)
-              Write-Host "`r🟢 Windows Server 2025 Active | Remaining: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Green
+              Write-Host "`r🟢 [Instance $env:INSTANCE] Active | Remaining: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Green
               Start-Sleep -Seconds 10
           }
 
   # ==================== JOB 2: WINDOWS WITH DOCKER ====================
   windows-docker:
+    name: "Windows Docker (#${{ matrix.instance }})"
     if: |
       github.event.inputs.os_version != 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)' &&
       github.event.inputs.os_version != 'Ubuntu 24.04 Desktop RDP (Native - 4vCPU | 16GB RAM)'
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    
+
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        instance: [1,2,3,4,5,6,7,8,9,10]
+
+    env:
+      INSTANCE: ${{ matrix.instance }}
+
     steps:
       - name: 🔧 Initializing Windows System
         run: |
+          set -e
           sudo apt-get update > /dev/null 2>&1
-          
+
+          echo "🧩 INSTANCE: $INSTANCE"
+
           SELECTED_OS="${{ github.event.inputs.os_version }}"
-          
+
           # Determine Windows Version
           if [[ "$SELECTED_OS" == *"2025"* ]]; then
             VERSION="2025"
@@ -114,9 +131,9 @@ jobs:
             VERSION="10"
             OS_NAME="Windows 10 Professional"
           fi
-          
-                    # Create Docker Compose Configuration with Port 8006 for Web Viewer
-          cat <<EOF > docker-compose.yml
+
+          # docker-compose.yml (đảm bảo YAML chuẩn, không indent “lạ”)
+          cat > docker-compose.yml <<EOF
           version: "3.9"
           services:
             windows:
@@ -130,7 +147,8 @@ jobs:
                 RAM_SIZE: "8G"
                 CPU_CORES: "4"
                 DISK_SIZE: "60G"
-              devices: [ "/dev/kvm" ]
+              devices:
+                - /dev/kvm
               ports:
                 - "3389:3389"
                 - "8006:8006"
@@ -138,7 +156,7 @@ jobs:
                 - ./oem:/oem
           EOF
 
-          # ===== OEM: chạy script + đặt sẵn installer trong Windows (C:\OEM) =====
+          # ===== OEM files (host ./oem -> Windows C:\OEM) =====
           mkdir -p oem
 
           cat > oem/install.bat <<'BAT'
@@ -146,12 +164,45 @@ jobs:
           powershell -NoProfile -ExecutionPolicy Bypass -File "C:\OEM\install.ps1"
           BAT
 
+          # Script chạy lúc login: đợi WARP ON rồi mở app2 (1 lần)
+          cat > oem/start_app2_after_warp.ps1 <<'PS1'
+          $ErrorActionPreference = "SilentlyContinue"
+          Start-Sleep -Seconds 15
+
+          $warpCli = (Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue).Source
+          if (-not $warpCli) {
+            $guess = "C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe"
+            if (Test-Path $guess) { $warpCli = $guess }
+          }
+
+          $warpOn = $false
+          $max = (Get-Date).AddMinutes(10)
+          while ((Get-Date) -lt $max) {
+            if ($warpCli) { & $warpCli connect | Out-Null }
+
+            try {
+              $t = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 "https://www.cloudflare.com/cdn-cgi/trace").Content
+              if ($t -match "warp=on") { $warpOn = $true; break }
+            } catch {}
+
+            Start-Sleep -Seconds 5
+          }
+
+          # Nếu hết 10 phút chưa thấy warp=on thì vẫn mở app (đỡ kẹt)
+          $appExe = "C:\OEM\app2.exe"
+          if (Test-Path $appExe) {
+            Start-Process $appExe -WorkingDirectory "C:\OEM"
+          }
+
+          Unregister-ScheduledTask -TaskName "Start-App2-After-WARP" -Confirm:$false
+          PS1
+
+          # Main OEM script chạy cuối quá trình cài Win
           cat > oem/install.ps1 <<'PS1'
           $ErrorActionPreference = "Stop"
-
           function Write-Log($msg) { Write-Host ("[OEM] " + $msg) }
 
-          # (A) Set DNS 1.1.1.1 + 1.0.0.1 (chỉ là DNS resolver; KHÔNG phải WARP VPN)
+          # (A) DNS 1.1.1.1 / 1.0.0.1
           try {
             Get-NetAdapter |
               Where-Object { $_.Status -eq "Up" -and $_.HardwareInterface } |
@@ -163,23 +214,22 @@ jobs:
             Write-Log "DNS set failed: $($_.Exception.Message)"
           }
 
-          # (B) Install Cloudflare WARP silently (ưu tiên MSI). File đặt tại C:\OEM\Cloudflare_WARP_Installer.*
+          # (B) Install Cloudflare WARP (file: C:\OEM\Cloudflare_WARP_Installer.*)
           $warpInstaller = Get-ChildItem -Path "C:\OEM" -Filter "Cloudflare_WARP_Installer.*" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($warpInstaller) {
             Write-Log "Found WARP installer: $($warpInstaller.FullName)"
 
-            # Detect EXE (MZ) vs MSI/other by magic bytes
             $b = Get-Content -Encoding Byte -Path $warpInstaller.FullName -TotalCount 2
-            $isExe = ($b.Length -ge 2 -and $b[0] -eq 0x4D -and $b[1] -eq 0x5A) # "MZ"
+            $isExe = ($b.Length -ge 2 -and $b[0] -eq 0x4D -and $b[1] -eq 0x5A) # MZ
             if ($isExe) {
-              Write-Log "Installer looks like EXE. Trying silent install with /S (may vary by version)."
+              Write-Log "Looks like EXE, trying /S"
               Start-Process -FilePath $warpInstaller.FullName -ArgumentList "/S" -Wait
             } else {
-              Write-Log "Installer looks like MSI. Installing via msiexec /qn."
+              Write-Log "Looks like MSI/other, using msiexec /qn"
               Start-Process msiexec.exe -ArgumentList "/i `"$($warpInstaller.FullName)`" /qn /norestart" -Wait
             }
 
-            # Wait for warp-cli to appear
+            # Find warp-cli
             $warpCli = $null
             for ($i=0; $i -lt 60 -and -not $warpCli; $i++) {
               $cmd = Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue
@@ -191,253 +241,154 @@ jobs:
 
             if ($warpCli) {
               Write-Log "warp-cli found at: $warpCli"
-              try {
-                & $warpCli registration new | Out-Null
-              } catch {
-                Write-Log "registration new failed/ignored: $($_.Exception.Message)"
-              }
+              try { & $warpCli registration new | Out-Null } catch {}
+              try { & $warpCli connect | Out-Null } catch {}
 
-              try {
-                & $warpCli connect | Out-Null
-                Write-Log "warp-cli connect issued"
-              } catch {
-                Write-Log "warp-cli connect failed: $($_.Exception.Message)"
-              }
-
-              # (Optional) Verify: curl trace should show warp=on
-              try {
-                $trace = (Invoke-WebRequest -UseBasicParsing "https://www.cloudflare.com/cdn-cgi/trace/").Content
-                if ($trace -match "warp=on") { Write-Log "WARP appears ON (warp=on)" }
-                else { Write-Log "WARP trace did not show warp=on yet" }
-              } catch {
-                Write-Log "WARP verify failed: $($_.Exception.Message)"
-              }
-
-              # (C) Make it auto-connect on every boot (Scheduled Task at startup)
+              # Auto-connect on boot
               try {
                 $taskName = "WARP-AutoConnect"
                 $taskCmd  = "`"$warpCli`" connect"
                 schtasks.exe /Create /F /TN $taskName /SC ONSTART /RU SYSTEM /RL HIGHEST /TR $taskCmd | Out-Null
                 Write-Log "Scheduled task created: $taskName"
               } catch {
-                Write-Log "Create scheduled task failed: $($_.Exception.Message)"
+                Write-Log "Create WARP task failed: $($_.Exception.Message)"
               }
             } else {
-              Write-Log "warp-cli not found after install (WARP may not have installed correctly)"
+              Write-Log "warp-cli not found after install"
             }
           } else {
             Write-Log "No WARP installer found in C:\OEM (skipping)"
           }
 
-          # (D) Install app #2 (đặt sẵn installer trong C:\OEM)
-          if (Test-Path "C:\OEM\app2.msi") {
-            Write-Log "Installing app2.msi"
-            Start-Process msiexec.exe -ArgumentList "/i `"C:\OEM\app2.msi`" /qn /norestart" -Wait
-          } elseif (Test-Path "C:\OEM\app2.exe") {
-            Write-Log "Installing app2.exe (you may need to adjust silent flags)"
-            Start-Process "C:\OEM\app2.exe" -ArgumentList "/S" -Wait
-          } else {
-            Write-Log "No app2 installer found (skipping)"
+          # (C) Register: wait WARP ON -> start app2 once at Admin logon
+          try {
+            $taskName = "Start-App2-After-WARP"
+            $script   = "C:\OEM\start_app2_after_warp.ps1"
+
+            $action    = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script`""
+            $trigger   = New-ScheduledTaskTrigger -AtLogOn -User "Admin"
+            $principal = New-ScheduledTaskPrincipal -UserId "Admin" -LogonType InteractiveToken -RunLevel Highest
+            $settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable
+
+            Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+            Write-Log "Registered task: $taskName"
+          } catch {
+            Write-Log "Register app2 task failed: $($_.Exception.Message)"
           }
-          # ================== Auto: wait WARP ON -> start app2 ==================
-          $taskName = "Start-App2-After-WARP"
-          $scriptPath = "C:\OEM\start_app2_after_warp.ps1"
-
-          @'
-          $ErrorActionPreference = "SilentlyContinue"
-
-          # chờ desktop ổn định
-          Start-Sleep -Seconds 15
-
-          # tìm warp-cli (phòng khi PATH chưa có)
-          $warpCli = (Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue).Source
-          if (-not $warpCli) {
-            $guess = "C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe"
-            if (Test-Path $guess) { $warpCli = $guess }
-          }
-
-          # đợi WARP ON tối đa 10 phút
-          $max = (Get-Date).AddMinutes(10)
-          while ((Get-Date) -lt $max) {
-            # cố gắng connect nếu có warp-cli
-            if ($warpCli) { & $warpCli connect | Out-Null }
-
-            try {
-              $t = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 "https://www.cloudflare.com/cdn-cgi/trace").Content
-              if ($t -match "warp=on") { break }
-            } catch {}
-
-            Start-Sleep -Seconds 5
-          }
-
-          # mở app2 (GUI hiện trong RDP)
-          $appExe = "C:\OEM\app2.exe"
-          if (Test-Path $appExe) {
-            Start-Process $appExe -WorkingDirectory "C:\OEM"
-          }
-
-          # nếu chỉ muốn chạy 1 lần rồi thôi (không chạy lại mỗi lần login)
-          Unregister-ScheduledTask -TaskName "Start-App2-After-WARP" -Confirm:$false
-          '@ | Set-Content -Encoding UTF8 $scriptPath
-
-          # Tạo Scheduled Task chạy khi Admin login (interactive session)
-          $action    = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
-          $trigger   = New-ScheduledTaskTrigger -AtLogOn -User "Admin"
-          $principal = New-ScheduledTaskPrincipal -UserId "Admin" -LogonType InteractiveToken -RunLevel Highest
-          $settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable
-
-          Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
-          # ================== end ==================
-
           PS1
 
-          # ===== Download installers into ./oem (will appear in Windows as C:\OEM) =====
-          # NOTE: Để chắc ăn nên lấy link .MSI từ trang "Download WARP stable releases" và dán vào đây.
+          # ===== Download installers into ./oem (=> Windows C:\OEM\...) =====
+          # WARP (link GA)
           WARP_URL="https://downloads.cloudflareclient.com/v1/download/windows/ga"
-          curl -L --retry 5 --retry-delay 2 -o oem/Cloudflare_WARP_Installer.msi "$WARP_URL"
+          curl -L --retry 5 --retry-delay 2 -o oem/Cloudflare_WARP_Installer.bin "$WARP_URL"
 
+          # app2 từ Google Drive
           python3 -m pip -q install --upgrade gdown
-
           APP2_DRIVE_LINK="https://drive.google.com/file/d/1ciDko62X7pl3ZobYJsMvO2Tdyq69-w9X/view?usp=sharing"
           gdown --fuzzy "$APP2_DRIVE_LINK" -O oem/app2.exe
 
-
           docker compose up -d > /dev/null 2>&1
-          
+
           echo "OS_NAME=$OS_NAME" >> $GITHUB_ENV
-          
+
           # Download Kami Tunnel
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
-          
-          # Start Kami Tunnel for RDP (Port 3389) - Tạo file kami_tunnel.txt
+
+          # Start Kami Tunnel for RDP (3389) + Web Viewer (8006)
           nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
-          RDP_PID=$!
-          echo "RDP Tunnel PID: $RDP_PID"
-          
-          # Chờ 5 giây để tunnel khởi động hoàn toàn
+          echo "RDP Tunnel PID: $!"
           sleep 5
-          
-          # Start Kami Tunnel for Web Viewer (Port 8006) - Ghi đè vào kami_tunnel.txt
           nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
-          WEB_PID=$!
-          echo "Web Tunnel PID: $WEB_PID"
+          echo "Web Tunnel PID: $!"
 
       - name: 🌐 Connection Information - Windows System
         run: |
+          echo "🧩 INSTANCE: $INSTANCE"
           echo "🔄 Establishing connection to $OS_NAME..."
           echo ""
-          
-          # ===== ĐỌC IP CHO RDP (PORT 3389) =====
+
           echo "⏳ Waiting for RDP tunnel (Port 3389)..."
           RDP_IP=""
           RDP_RETRY=0
-          
+
           while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
-            # Đọc từ file kami_tunnel.txt (được tạo bởi tunnel đầu tiên)
             if [ -f kami_tunnel.txt ]; then
               RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
               if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
                 RDP_IP="$RDP_CONTENT"
                 echo "✅ RDP IP captured: $RDP_IP"
-                # Sao lưu RDP IP ngay lập tức
                 echo "$RDP_IP" > kami_rdp_backup.txt
                 break
               fi
             fi
-            
             sleep 2
             RDP_RETRY=$((RDP_RETRY + 1))
             echo "   Retry $RDP_RETRY/60..."
           done
-          
+
           if [ -z "$RDP_IP" ]; then
             echo "❌ ERROR: Could not retrieve RDP IP"
-            cat kami_tunnel_rdp.log 2>/dev/null || echo "No RDP log available"
+            cat kami_tunnel_rdp.log 2>/dev/null || true
             exit 1
           fi
-          
+
           echo ""
           echo "⏳ Waiting for Web Viewer tunnel (Port 8006)..."
-          
-          # Chờ thêm 3 giây để tunnel 8006 khởi động
           sleep 3
-          
-          # ===== ĐỌC IP CHO WEB VIEWER (PORT 8006) =====
+
           WEB_IP=""
           WEB_RETRY=0
-          
+
           while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
-            # Đọc từ file kami_tunnel.txt (sẽ bị ghi đè bởi tunnel thứ hai)
             if [ -f kami_tunnel.txt ]; then
               WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
-              # Kiểm tra xem IP mới có khác với RDP IP không
               if [[ "$WEB_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "$RDP_IP" ]; then
                 WEB_IP="$WEB_CONTENT"
                 echo "✅ Web IP captured: $WEB_IP"
                 break
               fi
             fi
-            
             sleep 2
             WEB_RETRY=$((WEB_RETRY + 1))
             echo "   Retry $WEB_RETRY/60..."
           done
-          
-          # Nếu không lấy được Web IP riêng, tạo từ RDP IP
+
           if [ -z "$WEB_IP" ]; then
             echo "⚠️  Warning: Could not retrieve separate Web IP, constructing from RDP IP..."
             BASE_IP="${RDP_IP%:*}"
             WEB_IP="${BASE_IP}:8006"
             echo "📝 Constructed Web IP: $WEB_IP"
           fi
-          
-          # ===== HIỂN THỊ THÔNG TIN KẾT NỐI =====
+
           echo ""
           echo "╔═══════════════════════════════════════════════════════════════════════╗"
-          echo "║              ✅ $OS_NAME - READY FOR CONNECTION                    ║"
+          echo "║ ✅ $OS_NAME - READY FOR CONNECTION                                   ║"
           echo "╠═══════════════════════════════════════════════════════════════════════╣"
-          echo "║                                                                       ║"
-          echo "║  🖥️  REMOTE DESKTOP CONNECTION (RDP)                                  ║"
-          echo "║  ─────────────────────────────────────────────────────────────────   ║"
-          echo "║  🌐  RDP Address    : $RDP_IP"
-          echo "║  👤  Username       : Admin                                           ║"
-          echo "║  🔐  Password       : Window@123456                                   ║"
-          echo "║  📍  Port           : 3389                                            ║"
-          echo "║                                                                       ║"
-          echo "║  🌍  WEB VIEWER (Installation Progress Monitor)                      ║"
-          echo "║  ─────────────────────────────────────────────────────────────────   ║"
-          echo "║  🔗  Web Address    : http://$WEB_IP"
-          echo "║  📍  Port           : 8006                                            ║"
-          echo "║                                                                       ║"
-          echo "║  💻  SYSTEM RESOURCES                                                 ║"
-          echo "║  ─────────────────────────────────────────────────────────────────   ║"
-          echo "║  ⚡  CPU            : 4 vCPU                                          ║"
-          echo "║  🧠  RAM            : 8GB                                             ║"
-          echo "║  💾  Storage        : 60GB                                            ║"
-          echo "║                                                                       ║"
+          echo "║ 🧩  Instance       : $INSTANCE                                       ║"
+          echo "║ 🌐  RDP Address    : $RDP_IP                                         ║"
+          echo "║ 👤  Username       : Admin                                           ║"
+          echo "║ 🔐  Password       : Window@123456                                   ║"
+          echo "║ 🌍  Web Address    : http://$WEB_IP                                  ║"
           echo "╚═══════════════════════════════════════════════════════════════════════╝"
           echo ""
-          echo "💡 TIP: Use Web Viewer to monitor Windows installation progress in real-time!"
-          echo ""
-          
-          # Lưu thông tin vào environment
+
           echo "RDP_IP=$RDP_IP" >> $GITHUB_ENV
           echo "WEB_IP=$WEB_IP" >> $GITHUB_ENV
 
       - name: ⏰ Maintaining Active Session
         run: |
           echo ""
-          echo "🟢 Session started - Maintaining connection for 6 hours..."
+          echo "🟢 [Instance $INSTANCE] Session started - Maintaining connection for 6 hours..."
           echo ""
-          
+
           for i in {1..72}; do
             ELAPSED=$((i * 5))
             REMAINING=$((360 - ELAPSED))
-            
+
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🟢 [$(date +'%Y-%m-%d %H:%M:%S')] $OS_NAME - ACTIVE SESSION"
+            echo "🟢 [$(date +'%Y-%m-%d %H:%M:%S')] $OS_NAME - ACTIVE SESSION (#$INSTANCE)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "⏱️  Time Elapsed    : ${ELAPSED} minutes"
             echo "⏳  Time Remaining  : ${REMAINING} minutes"
@@ -445,58 +396,58 @@ jobs:
             echo "🌐  Web Viewer      : http://$WEB_IP"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
-            
+
             sleep 300
           done
 
   # ==================== JOB 3: UBUNTU DESKTOP RDP NATIVE ====================
   ubuntu-desktop-rdp:
+    name: "Ubuntu 24.04 Desktop RDP (#${{ matrix.instance }})"
     if: github.event.inputs.os_version == 'Ubuntu 24.04 Desktop RDP (Native - 4vCPU | 16GB RAM)'
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    
+
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        instance: [1,2,3,4,5,6,7,8,9,10]
+
+    env:
+      INSTANCE: ${{ matrix.instance }}
+
     steps:
       - name: 🔧 Initializing Ubuntu Desktop with RDP
         run: |
-          # Update system
+          echo "🧩 INSTANCE: $INSTANCE"
           sudo apt-get update > /dev/null 2>&1
-          
-          # Install XFCE Desktop Environment (lightweight)
+
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             xfce4 xfce4-goodies xorg dbus-x11 x11-xserver-utils > /dev/null 2>&1
-          
-          # Install XRDP Server
+
           sudo apt-get install -y xrdp > /dev/null 2>&1
-          
-          # Configure XRDP
           sudo systemctl enable xrdp > /dev/null 2>&1
           echo "xfce4-session" | tee ~/.xsession > /dev/null
           sudo systemctl restart xrdp > /dev/null 2>&1
-          
-          # Create Administrator Account
+
           sudo useradd -m -s /bin/bash Admin
           echo "Admin:Ubuntu@123456" | sudo chpasswd
           sudo usermod -aG sudo Admin
-          
-          # Configure XRDP for new user
           sudo -u Admin bash -c "echo 'xfce4-session' > /home/Admin/.xsession"
-          
-          # Download Kami Tunnel
+
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
-          
-          # Start Kami Tunnel for Port 3389 - Tạo file kami_tunnel.txt
+
           nohup ./kami-tunnel 3389 > kami_tunnel.log 2>&1 &
-          TUNNEL_PID=$!
-          echo "Tunnel PID: $TUNNEL_PID"
+          echo "Tunnel PID: $!"
 
       - name: 🌐 Connection Information - Ubuntu Desktop RDP
         run: |
+          echo "🧩 INSTANCE: $INSTANCE"
           echo "🔄 Establishing connection to Ubuntu 24.04 Desktop..."
           echo ""
-          
-          # Đợi file kami_tunnel.txt được tạo
+
           echo "⏳ Waiting for tunnel connection..."
           RETRY=0
           while [ ! -f kami_tunnel.txt ] && [ $RETRY -lt 60 ]; do
@@ -504,14 +455,13 @@ jobs:
             RETRY=$((RETRY + 1))
             echo "   Retry $RETRY/60..."
           done
-          
+
           if [ ! -f kami_tunnel.txt ]; then
             echo "❌ ERROR: kami_tunnel.txt not created"
-            cat kami_tunnel.log 2>/dev/null || echo "No tunnel log available"
+            cat kami_tunnel.log 2>/dev/null || true
             exit 1
           fi
-          
-          # Đọc RDP IP từ file
+
           RDP_IP=""
           RETRY=0
           while [ -z "$RDP_IP" ] && [ $RETRY -lt 60 ]; do
@@ -525,61 +475,34 @@ jobs:
             RETRY=$((RETRY + 1))
             echo "   Retry $RETRY/60..."
           done
-          
+
           if [ -z "$RDP_IP" ]; then
-            echo "❌ ERROR: Could not retrieve RDP IP from kami_tunnel.txt"
-            cat kami_tunnel.txt 2>/dev/null || echo "File is empty"
+            echo "❌ ERROR: Could not retrieve RDP IP"
             exit 1
           fi
-          
-          # Hiển thị thông tin kết nối
+
           echo ""
           echo "╔═══════════════════════════════════════════════════════════════════════╗"
-          echo "║         ✅ UBUNTU 24.04 DESKTOP RDP - READY FOR CONNECTION           ║"
+          echo "║ ✅ UBUNTU 24.04 DESKTOP RDP - READY                                  ║"
           echo "╠═══════════════════════════════════════════════════════════════════════╣"
-          echo "║                                                                       ║"
-          echo "║  🖥️  REMOTE DESKTOP CONNECTION (RDP)                                  ║"
-          echo "║  ─────────────────────────────────────────────────────────────────   ║"
-          echo "║  🌐  RDP Address    : $RDP_IP"
-          echo "║  👤  Username       : Admin                                           ║"
-          echo "║  🔐  Password       : Ubuntu@123456                                   ║"
-          echo "║  📍  Port           : 3389                                            ║"
-          echo "║                                                                       ║"
-          echo "║  🖥️  DESKTOP ENVIRONMENT                                              ║"
-          echo "║  ─────────────────────────────────────────────────────────────────   ║"
-          echo "║  🎨  Desktop        : XFCE4 (Lightweight & Fast)                     ║"
-          echo "║  🔧  RDP Server     : XRDP                                            ║"
-          echo "║                                                                       ║"
-          echo "║  💻  SYSTEM RESOURCES                                                 ║"
-          echo "║  ─────────────────────────────────────────────────────────────────   ║"
-          echo "║  ⚡  CPU            : 4 vCPU                                          ║"
-          echo "║  🧠  RAM            : 16GB                                            ║"
-          echo "║                                                                       ║"
+          echo "║ 🧩  Instance    : $INSTANCE                                          ║"
+          echo "║ 🌐  RDP Address : $RDP_IP                                            ║"
+          echo "║ 👤  Username    : Admin                                              ║"
+          echo "║ 🔐  Password    : Ubuntu@123456                                      ║"
           echo "╚═══════════════════════════════════════════════════════════════════════╝"
           echo ""
-          
-          # Lưu vào environment
+
           echo "RDP_IP=$RDP_IP" >> $GITHUB_ENV
 
       - name: ⏰ Maintaining Active Session
         run: |
           echo ""
-          echo "🟢 Session started - Maintaining connection for 6 hours..."
+          echo "🟢 [Instance $INSTANCE] Session started - Maintaining connection for 6 hours..."
           echo ""
-          
+
           for i in {1..72}; do
             ELAPSED=$((i * 5))
             REMAINING=$((360 - ELAPSED))
-            
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🟢 [$(date +'%Y-%m-%d %H:%M:%S')] Ubuntu 24.04 Desktop RDP - ACTIVE SESSION"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "⏱️  Time Elapsed    : ${ELAPSED} minutes"
-            echo "⏳  Time Remaining  : ${REMAINING} minutes"
-            echo "🖥️  RDP Connection  : $RDP_IP"
-            echo "🎨  Desktop         : XFCE4"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo ""
-            
+            echo "🟢 [$(date +'%Y-%m-%d %H:%M:%S')] Ubuntu ACTIVE (#$INSTANCE) | Remaining: ${REMAINING}m | $RDP_IP"
             sleep 300
           done
