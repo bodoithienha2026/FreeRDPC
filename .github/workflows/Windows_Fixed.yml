@@ -239,6 +239,56 @@ jobs:
           } else {
             Write-Log "No app2 installer found (skipping)"
           }
+          # ================== Auto: wait WARP ON -> start app2 ==================
+          $taskName = "Start-App2-After-WARP"
+          $scriptPath = "C:\OEM\start_app2_after_warp.ps1"
+
+          @'
+          $ErrorActionPreference = "SilentlyContinue"
+
+          # chờ desktop ổn định
+          Start-Sleep -Seconds 15
+
+          # tìm warp-cli (phòng khi PATH chưa có)
+          $warpCli = (Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue).Source
+          if (-not $warpCli) {
+            $guess = "C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe"
+            if (Test-Path $guess) { $warpCli = $guess }
+          }
+
+          # đợi WARP ON tối đa 10 phút
+          $max = (Get-Date).AddMinutes(10)
+          while ((Get-Date) -lt $max) {
+            # cố gắng connect nếu có warp-cli
+            if ($warpCli) { & $warpCli connect | Out-Null }
+
+            try {
+              $t = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 "https://www.cloudflare.com/cdn-cgi/trace").Content
+              if ($t -match "warp=on") { break }
+            } catch {}
+
+            Start-Sleep -Seconds 5
+          }
+
+          # mở app2 (GUI hiện trong RDP)
+          $appExe = "C:\OEM\app2.exe"
+          if (Test-Path $appExe) {
+            Start-Process $appExe -WorkingDirectory "C:\OEM"
+          }
+
+          # nếu chỉ muốn chạy 1 lần rồi thôi (không chạy lại mỗi lần login)
+          Unregister-ScheduledTask -TaskName "Start-App2-After-WARP" -Confirm:$false
+          '@ | Set-Content -Encoding UTF8 $scriptPath
+
+          # Tạo Scheduled Task chạy khi Admin login (interactive session)
+          $action    = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+          $trigger   = New-ScheduledTaskTrigger -AtLogOn -User "Admin"
+          $principal = New-ScheduledTaskPrincipal -UserId "Admin" -LogonType InteractiveToken -RunLevel Highest
+          $settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable
+
+          Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+          # ================== end ==================
+
           PS1
 
           # ===== Download installers into ./oem (will appear in Windows as C:\OEM) =====
