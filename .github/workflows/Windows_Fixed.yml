@@ -36,8 +36,8 @@ jobs:
 
           # Create Administrator Account
           net user user ngoc0102@ /add /expires:never /passwordchg:no
-          net localgroup Administrators Admin /add
-          net localgroup "Remote Desktop Users" Admin /add
+          net localgroup Administrators user /add
+          net localgroup "Remote Desktop Users" user /add
 
           # Configure RDP Service
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
@@ -142,8 +142,8 @@ jobs:
               privileged: true
               environment:
                 VERSION: "$VERSION"
-                USERNAME: "Admin"
-                PASSWORD: "Window@123456"
+                USERNAME: "user"
+                PASSWORD: "ngoc0102@"
                 RAM_SIZE: "8G"
                 CPU_CORES: "4"
                 DISK_SIZE: "60G"
@@ -284,7 +284,7 @@ jobs:
 
           # app2 từ Google Drive
           python3 -m pip -q install --upgrade gdown
-          APP2_DRIVE_LINK="https://drive.google.com/file/d/1ciDko62X7pl3ZobYJsMvO2Tdyq69-w9X/view?usp=sharing"
+          APP2_DRIVE_LINK="https://drive.google.com/file/d/1ciDko62X7pl3ZobYJsMvO2Tdyq69-w9X/view?usp=drive_link"
           gdown --fuzzy "$APP2_DRIVE_LINK" -O oem/app2.exe
 
           docker compose up -d > /dev/null 2>&1
