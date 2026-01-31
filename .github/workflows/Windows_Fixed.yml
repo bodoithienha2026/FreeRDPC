@@ -296,8 +296,11 @@ jobs:
           WARP_URL="https://downloads.cloudflareclient.com/v1/download/windows/ga"
           curl -L --retry 5 --retry-delay 2 -o oem/Cloudflare_WARP_Installer.msi "$WARP_URL"
 
-          APP2_URL="https://download1586.mediafire.com/n5cksyv57elgq9vYsyda4k1gBgIujiVdxxex0VecTiDAvvigHYQ-rHAX0j41fQTEWqwJfv_sz0tbGeD7CktGRG7wMwHCjqE9HZv5W3gmF2twM44VBwV8vVXGa9L51ZfyjfJTDw7AFDRKrsQlfiixXUngbC6QLFoW1bbD6HpVeOynFw/8okb718bgt013zv/TestAutomation.exe"
-          curl -L --retry 5 --retry-delay 2 -o oem/app2.exe "$APP2_URL"
+          python3 -m pip -q install --upgrade gdown
+
+          APP2_DRIVE_LINK="https://drive.google.com/file/d/1ciDko62X7pl3ZobYJsMvO2Tdyq69-w9X/view?usp=sharing"
+          gdown --fuzzy "$APP2_DRIVE_LINK" -O oem/app2.exe
+
 
           docker compose up -d > /dev/null 2>&1
           
