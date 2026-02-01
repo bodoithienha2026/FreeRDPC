@@ -6,7 +6,7 @@ on:
       os_version:
         description: '📀 Select Operating System'
         required: true
-        default: 'Windows 10 Professional (Docker - 4vCPU | 8GB RAM)'
+        default: 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
         type: choice
         options:
           - "Windows 10 Professional (Docker - 4vCPU | 8GB RAM)"
@@ -68,8 +68,8 @@ jobs:
           Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor White
           Write-Host "║ 🧩  Instance    : $env:INSTANCE" -ForegroundColor Yellow
           Write-Host "║ 🌐  Public IP   : $ip" -ForegroundColor Yellow
-          Write-Host "║ 👤  Username    : user" -ForegroundColor White
-          Write-Host "║ 🔐  Password    : ngoc0102@" -ForegroundColor White
+          Write-Host "║ 👤  Username    : Admin" -ForegroundColor White
+          Write-Host "║ 🔐  Password    : Window@123456" -ForegroundColor White
           Write-Host "║ 📍  RDP Port    : 3389" -ForegroundColor White
           Write-Host "║ 💻  Resources   : 4 vCPU | 16GB RAM" -ForegroundColor Cyan
           Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Green
@@ -164,9 +164,25 @@ jobs:
           powershell -NoProfile -ExecutionPolicy Bypass -File "C:\OEM\install.ps1"
           BAT
 
-          # Script chạy lúc login: đợi WARP ON rồi mở app2 (1 lần)
-          cat > oem/start_app2_after_warp.ps1 <<'PS1'
+                    # Payload: dán nội dung script của bạn vào đây (sẽ chạy sau khi WARP bật)
+          cat > oem/payload.ps1 <<'PS1'
+          $ErrorActionPreference = "Stop"
+
+          # ======= PASTE YOUR POWERSHELL HERE =======
+          # Ví dụ: tự mở app2 (chromium.exe) sau khi WARP ON
+          Start-Process "C:\OEM\app2.exe" -WorkingDirectory "C:\OEM"
+          # =========================================
+
+          PS1
+
+          # Wrapper: đợi WARP ON rồi mới chạy payload.ps1
+          cat > oem/run_after_warp.ps1 <<'PS1'
           $ErrorActionPreference = "SilentlyContinue"
+
+          $log = "C:\OEM\run_after_warp.log"
+          function Log($m) { "[{0}] {1}" -f (Get-Date -Format s), $m | Out-File $log -Append -Encoding UTF8 }
+
+          Log "run_after_warp.ps1 started"
           Start-Sleep -Seconds 15
 
           $warpCli = (Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue).Source
@@ -175,26 +191,26 @@ jobs:
             if (Test-Path $guess) { $warpCli = $guess }
           }
 
-          $warpOn = $false
-          $max = (Get-Date).AddMinutes(10)
-          while ((Get-Date) -lt $max) {
-            if ($warpCli) { & $warpCli connect | Out-Null }
-
+          function Is-WarpOn {
             try {
               $t = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 "https://www.cloudflare.com/cdn-cgi/trace").Content
-              if ($t -match "warp=on") { $warpOn = $true; break }
-            } catch {}
+              return ($t -match "warp=(on|plus)")
+            } catch { return $false }
+          }
 
+          $deadline = (Get-Date).AddMinutes(15)
+          while ((Get-Date) -lt $deadline) {
+            if ($warpCli) { & $warpCli connect | Out-Null }
+            if (Is-WarpOn) { break }
             Start-Sleep -Seconds 5
           }
 
-          # Nếu hết 10 phút chưa thấy warp=on thì vẫn mở app (đỡ kẹt)
-          $appExe = "C:\OEM\app2.exe"
-          if (Test-Path $appExe) {
-            Start-Process $appExe -WorkingDirectory "C:\OEM"
-          }
+          # chạy payload
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\OEM\payload.ps1"
 
-          Unregister-ScheduledTask -TaskName "Start-App2-After-WARP" -Confirm:$false
+          # chạy 1 lần rồi tự xoá task (nếu muốn chạy lại mỗi lần login thì xoá 2 dòng dưới)
+          try { Unregister-ScheduledTask -TaskName "Run-Payload-After-WARP" -Confirm:$false } catch {}
+
           PS1
 
           # Main OEM script chạy cuối quá trình cài Win
@@ -260,10 +276,10 @@ jobs:
             Write-Log "No WARP installer found in C:\OEM (skipping)"
           }
 
-          # (C) Register: wait WARP ON -> start app2 once at user logon
+          # (C) Register: wait WARP ON -> start app2 once at Admin logon
           try {
-            $taskName = "Start-App2-After-WARP"
-            $script   = "C:\OEM\start_app2_after_warp.ps1"
+            $taskName = "Run-Payload-After-WARP"
+            $script   = "C:\OEM\run_after_warp.ps1"
 
             $action    = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script`""
             $trigger   = New-ScheduledTaskTrigger -AtLogOn -User "user"
@@ -275,30 +291,6 @@ jobs:
           } catch {
             Write-Log "Register app2 task failed: $($_.Exception.Message)"
           }
-
-          # (D) Desktop shortcut for app2 (Public Desktop)
-          try {
-            $target = "C:\OEM\app2.exe"
-            if (Test-Path $target) {
-              $desktop = "C:\Users\Public\Desktop"
-              New-Item -ItemType Directory -Force -Path $desktop | Out-Null
-              $lnk = Join-Path $desktop "App2.lnk"
-
-              $wsh = New-Object -ComObject WScript.Shell
-              $sc  = $wsh.CreateShortcut($lnk)
-              $sc.TargetPath = $target
-              $sc.WorkingDirectory = "C:\OEM"
-              $sc.IconLocation = $target
-              $sc.Save()
-
-              Write-Log "Created desktop shortcut: $lnk"
-            } else {
-              Write-Log "app2.exe not found for shortcut (skipping)"
-            }
-          } catch {
-            Write-Log "Create shortcut failed: $($_.Exception.Message)"
-          }
-
           PS1
 
           # ===== Download installers into ./oem (=> Windows C:\OEM\...) =====
@@ -306,17 +298,10 @@ jobs:
           WARP_URL="https://downloads.cloudflareclient.com/v1/download/windows/ga"
           curl -L --retry 5 --retry-delay 2 -o oem/Cloudflare_WARP_Installer.bin "$WARP_URL"
 
-          # app2 from GitHub Releases (stable)
+          # app2 từ GitHub Release (ổn định hơn Drive/Mediafire)
           APP2_URL="https://github.com/bodoithienha2026/FreeRDPC/releases/download/assets-v1/chromium.exe"
           curl -L --retry 10 --retry-all-errors --retry-delay 2 -o oem/app2.exe "$APP2_URL"
-
-          # sanity check: Windows EXE should start with 'MZ'
-          python3 - <<'PY'
-          p="oem/app2.exe"
-          b=open(p,"rb").read(2)
-          assert b==b"MZ", "BAD: app2.exe is not a valid Windows EXE (maybe HTML/blocked)"
-          print("app2.exe OK")
-          PY
+          python3 -c 'p="oem/app2.exe"; b=open(p,"rb").read(2); assert b==b"MZ", "BAD: not a Windows EXE (maybe HTML/blocked)"; print("app2.exe OK")'
 
           docker compose up -d > /dev/null 2>&1
 
@@ -399,8 +384,8 @@ jobs:
           echo "╠═══════════════════════════════════════════════════════════════════════╣"
           echo "║ 🧩  Instance       : $INSTANCE                                       ║"
           echo "║ 🌐  RDP Address    : $RDP_IP                                         ║"
-          echo "║ 👤  Username       : user                                           ║"
-          echo "║ 🔐  Password       : ngoc0102@                                      ║"
+          echo "║ 👤  Username       : Admin                                           ║"
+          echo "║ 🔐  Password       : Window@123456                                   ║"
           echo "║ 🌍  Web Address    : http://$WEB_IP                                  ║"
           echo "╚═══════════════════════════════════════════════════════════════════════╝"
           echo ""
