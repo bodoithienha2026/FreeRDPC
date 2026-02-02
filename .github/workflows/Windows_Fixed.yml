@@ -4,91 +4,61 @@ on:
   workflow_dispatch:
     inputs:
       os_version:
-        description: '📀 Select Operating System'
+        description: "📀 Select Operating System"
         required: true
-        default: 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
+        default: "Windows 10 Professional (Docker - 4vCPU | 8GB RAM)"
         type: choice
         options:
           - "Windows 10 Professional (Docker - 4vCPU | 8GB RAM)"
-          
+
+permissions:
+  contents: read
 
 jobs:
-  # ==================== JOB 1: WINDOWS SERVER 2025 NATIVE ====================
-  windows-server-2025-native:
-    name: "Windows Server 2025 Native (#${{ matrix.instance }})"
-    if: github.event.inputs.os_version == 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)'
-    runs-on: windows-latest
-    timeout-minutes: 360
-
-    strategy:
-      fail-fast: false
-      max-parallel: 10
-      matrix:
-        instance: [1,2,3,4,5,6,7,8,9,10]
-
-    env:
-      INSTANCE: ${{ matrix.instance }}
-
+  # ==================== JOB 0: DOWNLOAD ONCE -> UPLOAD ARTIFACT ====================
+  prepare-oem-binaries:
+    name: "Prepare OEM binaries (download once)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
-      - name: 🔧 Initializing Windows Server 2025 (Native)
+      - name: 📥 Download WARP + App2 once
         run: |
-          $ErrorActionPreference = 'SilentlyContinue'
+          set -euxo pipefail
+          mkdir -p oem
 
-          # Create Administrator Account
-          net user user ngoc0102@ /add /expires:never /passwordchg:no
-          net localgroup Administrators user /add
-          net localgroup "Remote Desktop Users" user /add
+          # Cloudflare WARP installer (GA)
+          WARP_URL="https://downloads.cloudflareclient.com/v1/download/windows/ga"
+          curl -L --retry 10 --retry-all-errors --retry-delay 2 \
+            -o oem/Cloudflare_WARP_Installer.bin "$WARP_URL"
 
-          # Configure RDP Service
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-          netsh advfirewall firewall add rule name="RDP-3389" dir=in action=allow protocol=TCP localport=3389 profile=any
+          # App2 from GitHub Release (your link)
+          APP2_URL="https://github.com/bodoithienha2026/FreeRDPC/releases/download/assets-v1/chromium.exe"
+          curl -L --retry 10 --retry-all-errors --retry-delay 2 \
+            -o oem/chromium.exe "$APP2_URL"
 
-          # Start Kami Tunnel
-          Start-Process powershell -ArgumentList "-NoProfile -Command `
-            iwr https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-windows-amd64.tar.gz -OutFile kami-tunnel-windows-amd64.tar.gz; `
-            tar -xzf kami-tunnel-windows-amd64.tar.gz; `
-            .\kami-tunnel.exe 3389"
+          # Quick sanity: must be Windows EXE (MZ header)
+          python3 - <<'PY'
+          p="oem/chromium.exe"
+          with open(p,"rb") as f:
+              head=f.read(2)
+          assert head == b"MZ", f"BAD download: {p} is not a Windows EXE (got {head!r})"
+          print("chromium.exe OK")
+          PY
 
-      - name: 🌐 Connection Information - Windows Server 2025
-        run: |
-          Write-Host "🧩 INSTANCE: $env:INSTANCE" -ForegroundColor Yellow
-          Write-Host "🔄 Establishing connection to Windows Server 2025..." -ForegroundColor Cyan
-          $ip = ""
-          while (-not $ip) {
-              if (Test-Path "kami_tunnel.txt") {
-                  $content = Get-Content "kami_tunnel.txt"
-                  if ($content -match '\.') { $ip = $content }
-              }
-              if (-not $ip) { Start-Sleep -Seconds 3 }
-          }
+      - name: 📦 Upload artifact (shared for matrix jobs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: oem-binaries
+          path: oem/
+          if-no-files-found: error
+          retention-days: 1
 
-          Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-          Write-Host "║      ✅ WINDOWS SERVER 2025 - READY FOR CONNECTION        ║" -ForegroundColor Green
-          Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor White
-          Write-Host "║ 🧩  Instance    : $env:INSTANCE" -ForegroundColor Yellow
-          Write-Host "║ 🌐  Public IP   : $ip" -ForegroundColor Yellow
-          Write-Host "║ 👤  Username    : Admin" -ForegroundColor White
-          Write-Host "║ 🔐  Password    : Window@123456" -ForegroundColor White
-          Write-Host "║ 📍  RDP Port    : 3389" -ForegroundColor White
-          Write-Host "║ 💻  Resources   : 4 vCPU | 16GB RAM" -ForegroundColor Cyan
-          Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Green
-
-      - name: ⏰ Maintaining Active Session
-        run: |
-          $endTime = (Get-Date).AddMinutes(340)
-          while ((Get-Date) -lt $endTime) {
-              $left = $endTime - (Get-Date)
-              Write-Host "`r🟢 [Instance $env:INSTANCE] Active | Remaining: $($left.ToString('hh\:mm\:ss'))" -NoNewline -ForegroundColor Green
-              Start-Sleep -Seconds 10
-          }
-
-  # ==================== JOB 2: WINDOWS WITH DOCKER ====================
+  # ==================== JOB 1: WINDOWS DOCKER (10 INSTANCES) ====================
   windows-docker:
     name: "Windows Docker (#${{ matrix.instance }})"
-    if: |
-      github.event.inputs.os_version != 'Windows Server 2025 (Native - 4vCPU | 16GB RAM)' &&
-      github.event.inputs.os_version != 'Ubuntu 24.04 Desktop RDP (Native - 4vCPU | 16GB RAM)'
+    needs: prepare-oem-binaries
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -102,16 +72,21 @@ jobs:
       INSTANCE: ${{ matrix.instance }}
 
     steps:
+      - name: 📦 Download shared binaries (artifact)
+        uses: actions/download-artifact@v5
+        with:
+          name: oem-binaries
+          path: oem
+
       - name: 🔧 Initializing Windows System
         run: |
           set -e
           sudo apt-get update > /dev/null 2>&1
 
           echo "🧩 INSTANCE: $INSTANCE"
-
           SELECTED_OS="${{ github.event.inputs.os_version }}"
 
-          # Determine Windows Version
+          # Determine Windows Version (only Win10 option now, but keep generic)
           if [[ "$SELECTED_OS" == *"2025"* ]]; then
             VERSION="2025"
             OS_NAME="Windows Server 2025"
@@ -130,9 +105,14 @@ jobs:
           elif [[ "$SELECTED_OS" == *"10"* ]]; then
             VERSION="10"
             OS_NAME="Windows 10 Professional"
+          else
+            echo "Unknown OS selection: $SELECTED_OS"
+            exit 1
           fi
 
-          # docker-compose.yml (đảm bảo YAML chuẩn, không indent “lạ”)
+          echo "OS_NAME=$OS_NAME" >> $GITHUB_ENV
+
+          # docker-compose.yml
           cat > docker-compose.yml <<EOF
           version: "3.9"
           services:
@@ -156,77 +136,14 @@ jobs:
                 - ./oem:/oem
           EOF
 
-          # ===== OEM files (host ./oem -> Windows C:\OEM) =====
-          mkdir -p oem
-
+          # ===== OEM scripts (host ./oem -> Windows C:\OEM) =====
+          # (artifact đã tải sẵn chromium.exe + Cloudflare_WARP_Installer.bin vào ./oem rồi)
           cat > oem/install.bat <<'BAT'
           @echo off
           powershell -NoProfile -ExecutionPolicy Bypass -File "C:\OEM\install.ps1"
           BAT
 
-                    # Payload: dán nội dung script của bạn vào đây (sẽ chạy sau khi WARP bật)
-          cat > oem/payload.ps1 <<'PS1'
-          $ErrorActionPreference = "SilentlyContinue"
-
-          $target = "C:\OEM\chromium.exe"
-          if (Test-Path $target) {
-          $desktop = "C:\Users\Public\Desktop"
-          New-Item -ItemType Directory -Force -Path $desktop | Out-Null
-
-          $lnk = Join-Path $desktop "Chromium.lnk"
-          $wsh = New-Object -ComObject WScript.Shell
-          $sc  = $wsh.CreateShortcut($lnk)
-          $sc.TargetPath = $target
-          $sc.WorkingDirectory = "C:\OEM"
-          $sc.IconLocation = $target
-          $sc.Save()
-          }
-
-          # ======= PASTE YOUR POWERSHELL HERE =======
-          
-          # =========================================
-
-          PS1
-
-          # Wrapper: đợi WARP ON rồi mới chạy payload.ps1
-          cat > oem/run_after_warp.ps1 <<'PS1'
-          $ErrorActionPreference = "SilentlyContinue"
-
-          $log = "C:\OEM\run_after_warp.log"
-          function Log($m) { "[{0}] {1}" -f (Get-Date -Format s), $m | Out-File $log -Append -Encoding UTF8 }
-
-          Log "run_after_warp.ps1 started"
-          Start-Sleep -Seconds 15
-
-          $warpCli = (Get-Command "warp-cli.exe" -ErrorAction SilentlyContinue).Source
-          if (-not $warpCli) {
-            $guess = "C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe"
-            if (Test-Path $guess) { $warpCli = $guess }
-          }
-
-          function Is-WarpOn {
-            try {
-              $t = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 "https://www.cloudflare.com/cdn-cgi/trace").Content
-              return ($t -match "warp=(on|plus)")
-            } catch { return $false }
-          }
-
-          $deadline = (Get-Date).AddMinutes(15)
-          while ((Get-Date) -lt $deadline) {
-            if ($warpCli) { & $warpCli connect | Out-Null }
-            if (Is-WarpOn) { break }
-            Start-Sleep -Seconds 5
-          }
-
-          # chạy payload
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\OEM\payload.ps1"
-
-          # chạy 1 lần rồi tự xoá task (nếu muốn chạy lại mỗi lần login thì xoá 2 dòng dưới)
-          try { Unregister-ScheduledTask -TaskName "Run-Payload-After-WARP" -Confirm:$false } catch {}
-
-          PS1
-
-          # Main OEM script chạy cuối quá trình cài Win
+          # Main OEM script (cài WARP + tạo shortcut app2 ra Desktop)
           cat > oem/install.ps1 <<'PS1'
           $ErrorActionPreference = "Stop"
           function Write-Log($msg) { Write-Host ("[OEM] " + $msg) }
@@ -289,36 +206,31 @@ jobs:
             Write-Log "No WARP installer found in C:\OEM (skipping)"
           }
 
-          # (C) Register: wait WARP ON -> start app2 once at Admin logon
+          # (C) Create Desktop shortcut for app2 (Public Desktop)
           try {
-            $taskName = "Run-Payload-After-WARP"
-            $script   = "C:\OEM\run_after_warp.ps1"
+            $target = "C:\OEM\chromium.exe"
+            if (Test-Path $target) {
+              $desktop = "C:\Users\Public\Desktop"
+              New-Item -ItemType Directory -Force -Path $desktop | Out-Null
 
-            $action    = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script`""
-            $trigger   = New-ScheduledTaskTrigger -AtLogOn -User "user"
-            $principal = New-ScheduledTaskPrincipal -UserId "user" -LogonType InteractiveToken -RunLevel Highest
-            $settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable
+              $lnk = Join-Path $desktop "Chromium.lnk"
+              $wsh = New-Object -ComObject WScript.Shell
+              $sc  = $wsh.CreateShortcut($lnk)
+              $sc.TargetPath = $target
+              $sc.WorkingDirectory = "C:\OEM"
+              $sc.IconLocation = $target
+              $sc.Save()
 
-            Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
-            Write-Log "Registered task: $taskName"
+              Write-Log "Shortcut created: $lnk"
+            } else {
+              Write-Log "App2 not found at $target"
+            }
           } catch {
-            Write-Log "Register app2 task failed: $($_.Exception.Message)"
+            Write-Log "Create shortcut failed: $($_.Exception.Message)"
           }
           PS1
 
-          # ===== Download installers into ./oem (=> Windows C:\OEM\...) =====
-          # WARP (link GA)
-          WARP_URL="https://downloads.cloudflareclient.com/v1/download/windows/ga"
-          curl -L --retry 5 --retry-delay 2 -o oem/Cloudflare_WARP_Installer.bin "$WARP_URL"
-
-          # app2 từ GitHub Release (ổn định hơn Drive/Mediafire)
-          APP2_URL="https://github.com/bodoithienha2026/FreeRDPC/releases/download/assets-v1/chromium.exe"
-          curl -L --retry 10 --retry-all-errors --retry-delay 2 -o oem/app2.exe "$APP2_URL"
-          python3 -c 'p="oem/app2.exe"; b=open(p,"rb").read(2); assert b==b"MZ", "BAD: not a Windows EXE (maybe HTML/blocked)"; print("app2.exe OK")'
-
           docker compose up -d > /dev/null 2>&1
-
-          echo "OS_NAME=$OS_NAME" >> $GITHUB_ENV
 
           # Download Kami Tunnel
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
@@ -348,7 +260,6 @@ jobs:
               if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
                 RDP_IP="$RDP_CONTENT"
                 echo "✅ RDP IP captured: $RDP_IP"
-                echo "$RDP_IP" > kami_rdp_backup.txt
                 break
               fi
             fi
@@ -397,8 +308,8 @@ jobs:
           echo "╠═══════════════════════════════════════════════════════════════════════╣"
           echo "║ 🧩  Instance       : $INSTANCE                                       ║"
           echo "║ 🌐  RDP Address    : $RDP_IP                                         ║"
-          echo "║ 👤  Username       : Admin                                           ║"
-          echo "║ 🔐  Password       : Window@123456                                   ║"
+          echo "║ 👤  Username       : user                                            ║"
+          echo "║ 🔐  Password       : ngoc0102@                                       ║"
           echo "║ 🌍  Web Address    : http://$WEB_IP                                  ║"
           echo "╚═══════════════════════════════════════════════════════════════════════╝"
           echo ""
@@ -426,112 +337,5 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
 
-            sleep 300
-          done
-
-  # ==================== JOB 3: UBUNTU DESKTOP RDP NATIVE ====================
-  ubuntu-desktop-rdp:
-    name: "Ubuntu 24.04 Desktop RDP (#${{ matrix.instance }})"
-    if: github.event.inputs.os_version == 'Ubuntu 24.04 Desktop RDP (Native - 4vCPU | 16GB RAM)'
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-
-    strategy:
-      fail-fast: false
-      max-parallel: 10
-      matrix:
-        instance: [1,2,3,4,5,6,7,8,9,10]
-
-    env:
-      INSTANCE: ${{ matrix.instance }}
-
-    steps:
-      - name: 🔧 Initializing Ubuntu Desktop with RDP
-        run: |
-          echo "🧩 INSTANCE: $INSTANCE"
-          sudo apt-get update > /dev/null 2>&1
-
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            xfce4 xfce4-goodies xorg dbus-x11 x11-xserver-utils > /dev/null 2>&1
-
-          sudo apt-get install -y xrdp > /dev/null 2>&1
-          sudo systemctl enable xrdp > /dev/null 2>&1
-          echo "xfce4-session" | tee ~/.xsession > /dev/null
-          sudo systemctl restart xrdp > /dev/null 2>&1
-
-          sudo useradd -m -s /bin/bash Admin
-          echo "Admin:Ubuntu@123456" | sudo chpasswd
-          sudo usermod -aG sudo Admin
-          sudo -u Admin bash -c "echo 'xfce4-session' > /home/Admin/.xsession"
-
-          wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
-          tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
-          chmod +x kami-tunnel
-
-          nohup ./kami-tunnel 3389 > kami_tunnel.log 2>&1 &
-          echo "Tunnel PID: $!"
-
-      - name: 🌐 Connection Information - Ubuntu Desktop RDP
-        run: |
-          echo "🧩 INSTANCE: $INSTANCE"
-          echo "🔄 Establishing connection to Ubuntu 24.04 Desktop..."
-          echo ""
-
-          echo "⏳ Waiting for tunnel connection..."
-          RETRY=0
-          while [ ! -f kami_tunnel.txt ] && [ $RETRY -lt 60 ]; do
-            sleep 2
-            RETRY=$((RETRY + 1))
-            echo "   Retry $RETRY/60..."
-          done
-
-          if [ ! -f kami_tunnel.txt ]; then
-            echo "❌ ERROR: kami_tunnel.txt not created"
-            cat kami_tunnel.log 2>/dev/null || true
-            exit 1
-          fi
-
-          RDP_IP=""
-          RETRY=0
-          while [ -z "$RDP_IP" ] && [ $RETRY -lt 60 ]; do
-            RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
-            if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
-              RDP_IP="$RDP_CONTENT"
-              echo "✅ RDP IP captured: $RDP_IP"
-              break
-            fi
-            sleep 2
-            RETRY=$((RETRY + 1))
-            echo "   Retry $RETRY/60..."
-          done
-
-          if [ -z "$RDP_IP" ]; then
-            echo "❌ ERROR: Could not retrieve RDP IP"
-            exit 1
-          fi
-
-          echo ""
-          echo "╔═══════════════════════════════════════════════════════════════════════╗"
-          echo "║ ✅ UBUNTU 24.04 DESKTOP RDP - READY                                  ║"
-          echo "╠═══════════════════════════════════════════════════════════════════════╣"
-          echo "║ 🧩  Instance    : $INSTANCE                                          ║"
-          echo "║ 🌐  RDP Address : $RDP_IP                                            ║"
-          echo "║ 👤  Username    : Admin                                              ║"
-          echo "║ 🔐  Password    : Ubuntu@123456                                      ║"
-          echo "╚═══════════════════════════════════════════════════════════════════════╝"
-          echo ""
-
-          echo "RDP_IP=$RDP_IP" >> $GITHUB_ENV
-
-      - name: ⏰ Maintaining Active Session
-        run: |
-          echo ""
-          echo "🟢 [Instance $INSTANCE] Session started - Maintaining connection for 6 hours..."
-          echo ""
-
-          for i in {1..72}; do
-            ELAPSED=$((i * 5))
-            REMAINING=$((360 - ELAPSED))
-            echo "🟢 [$(date +'%Y-%m-%d %H:%M:%S')] Ubuntu ACTIVE (#$INSTANCE) | Remaining: ${REMAINING}m | $RDP_IP"
             sleep 300
           done
