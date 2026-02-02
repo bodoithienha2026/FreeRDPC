@@ -166,11 +166,24 @@ jobs:
 
                     # Payload: dán nội dung script của bạn vào đây (sẽ chạy sau khi WARP bật)
           cat > oem/payload.ps1 <<'PS1'
-          $ErrorActionPreference = "Stop"
+          $ErrorActionPreference = "SilentlyContinue"
+
+          $target = "C:\OEM\chromium.exe"
+          if (Test-Path $target) {
+          $desktop = "C:\Users\Public\Desktop"
+          New-Item -ItemType Directory -Force -Path $desktop | Out-Null
+
+          $lnk = Join-Path $desktop "Chromium.lnk"
+          $wsh = New-Object -ComObject WScript.Shell
+          $sc  = $wsh.CreateShortcut($lnk)
+          $sc.TargetPath = $target
+          $sc.WorkingDirectory = "C:\OEM"
+          $sc.IconLocation = $target
+          $sc.Save()
+          }
 
           # ======= PASTE YOUR POWERSHELL HERE =======
-          # Ví dụ: tự mở app2 (chromium.exe) sau khi WARP ON
-          Start-Process "C:\OEM\app2.exe" -WorkingDirectory "C:\OEM"
+          
           # =========================================
 
           PS1
